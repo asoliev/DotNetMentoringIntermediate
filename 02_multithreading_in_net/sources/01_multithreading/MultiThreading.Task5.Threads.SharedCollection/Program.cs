@@ -22,33 +22,35 @@ static class Program
 
         Console.WriteLine("Producer adds 1..10, consumer prints growing snapshots.");
 
-        var buffer = new BlockingCollection<int>();
-        var consumer = new Thread(() =>
+        using (var buffer = new BlockingCollection<int>())
         {
-            var snapshot = new List<int>();
-            foreach (var item in buffer.GetConsumingEnumerable())
+            var consumer = new Thread(() =>
             {
-                snapshot.Add(item);
-                Console.WriteLine("[" + string.Join(", ", snapshot) + "]");
-            }
-        });
+                var snapshot = new List<int>();
+                foreach (var item in buffer.GetConsumingEnumerable())
+                {
+                    snapshot.Add(item);
+                    Console.WriteLine("[" + string.Join(", ", snapshot) + "]");
+                }
+            });
 
-        var producer = new Thread(() =>
-        {
-            for (int i = 1; i <= 10; i++)
+            var producer = new Thread(() =>
             {
-                buffer.Add(i);
-            }
+                for (int i = 1; i <= 10; i++)
+                {
+                    buffer.Add(i);
+                }
 
-            buffer.CompleteAdding();
-        });
+                buffer.CompleteAdding();
+            });
 
-        consumer.Start();
-        producer.Start();
+            consumer.Start();
+            producer.Start();
 
-        producer.Join();
-        consumer.Join();
+            producer.Join();
+            consumer.Join();
 
-        Console.ReadLine();
+            Console.ReadLine();
+        }
     }
 }
