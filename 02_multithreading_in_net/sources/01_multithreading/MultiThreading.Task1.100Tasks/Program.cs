@@ -40,10 +40,19 @@ static class Program
             });
         }
 
-        // Wait for all tasks to complete
-        Task.WaitAll(tasks);
+        try
+        {
+            Task.WaitAll(tasks);
+        }
+        catch (AggregateException agg)
+        {
+            foreach (var ex in agg.Flatten().InnerExceptions)
+            {
+                Console.WriteLine($"Task error: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
 
-        Console.WriteLine("All tasks are finished.");
+        Console.WriteLine("All tasks are finished (or failed).");
     }
 
     static void Output(int taskNumber, int iterationNumber) =>
