@@ -54,7 +54,7 @@ static class Program
 
         // Decrement and print
         value--;
-        Console.WriteLine($"[Thread:{Thread.CurrentThread.ManagedThreadId}] value = {value}");
+        Console.WriteLine($"[Thread:{Environment.CurrentManagedThreadId}] value = {value}");
 
         // If there are more to create, start a new thread passing the decremented value and join it.
         if (value > 0)
@@ -70,7 +70,7 @@ static class Program
     // Main thread will wait for exactly `initialValue` releases.
     static void RunWithThreadPool(int initialValue)
     {
-        using SemaphoreSlim semaphore = new SemaphoreSlim(0, initialValue);
+        using SemaphoreSlim semaphore = new(0, initialValue);
 
         // Work callback for ThreadPool threads.
         void PoolCallback(object? state)
@@ -79,7 +79,7 @@ static class Program
 
             // Decrement and print
             value--;
-            Console.WriteLine($"[ThreadPool:{Thread.CurrentThread.ManagedThreadId}] value = {value}");
+            Console.WriteLine($"[ThreadPool:{Environment.CurrentManagedThreadId}] value = {value}");
 
             // If more work is needed, queue the next work item with the decremented value.
             if (value > 0)
