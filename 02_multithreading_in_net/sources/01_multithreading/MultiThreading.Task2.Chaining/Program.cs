@@ -23,11 +23,9 @@ static class Program
         Console.WriteLine("Fourth Task – calculates the average value. All this tasks should print the values to console");
         Console.WriteLine();
 
-        // feel free to add your code
-
         var random = new Random();
         var numbers = new int[10];
-        var task1 = Task.Run(() =>
+        var randomIntArrayTask = Task.Run(() =>
         {
             for (int i = 0; i < numbers.Length; i++)
             {
@@ -36,7 +34,7 @@ static class Program
             Console.WriteLine($"Task 1 - Created array: {string.Join(", ", numbers)}");
         });
 
-        var task2 = task1.ContinueWith(t =>
+        var multiplyArrayTask = randomIntArrayTask.ContinueWith(t =>
         {
             int multiplier = random.Next(1, 11);
             for (int i = 0; i < numbers.Length; i++)
@@ -46,13 +44,13 @@ static class Program
             Console.WriteLine($"Task 2 - Multiplied array by {multiplier}: {string.Join(", ", numbers)}");
         });
 
-        var task3 = task2.ContinueWith(t =>
+        var sortTask = multiplyArrayTask.ContinueWith(t =>
         {
             Array.Sort(numbers);
             Console.WriteLine($"Task 3 - Sorted array: {string.Join(", ", numbers)}");
         });
 
-        var task4 = task3.ContinueWith(t =>
+        var avgTask = sortTask.ContinueWith(t =>
         {
             double average = numbers.Average();
             Console.WriteLine($"Task 4 - Average value: {average}");
