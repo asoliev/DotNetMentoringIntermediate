@@ -48,7 +48,7 @@ static class Program
         root.Join();
     }
 
-    static void ThreadProc(object? state)
+    static void ThreadProc(object state)
     {
         if (state is not int value) return;
 
@@ -73,7 +73,7 @@ static class Program
         using SemaphoreSlim semaphore = new(0, initialValue);
 
         // Work callback for ThreadPool threads.
-        void PoolCallback(object? state)
+        void PoolCallback(object state)
         {
             if (state is not int value) return;
 
