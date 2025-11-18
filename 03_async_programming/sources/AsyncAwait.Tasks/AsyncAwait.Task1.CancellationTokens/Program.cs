@@ -11,13 +11,10 @@ using System;
 
 namespace AsyncAwait.Task1.CancellationTokens;
 
-internal class Program
+internal static class Program
 {
-    /// <summary>
-    /// The Main method should not be changed at all.
-    /// </summary>
-    /// <param name="args"></param>
-    private static void Main(string[] args)
+    /// <summary> The Main method should not be changed at all.</summary>
+    private static void Main()
     {
         Console.WriteLine("Mentoring program L2. Async/await.V1. Task 1");
         Console.WriteLine("Calculating the sum of integers from 0 to N.");
@@ -27,7 +24,9 @@ internal class Program
         Console.WriteLine("Enter N: ");
 
         var input = Console.ReadLine();
-        while (input.Trim().ToUpper() != "Q")
+        // Fix for CS8602: Dereference of a possibly null reference.
+        // Add null check for input before calling Trim().
+        while (input != null && !input.Trim().Equals("Q", StringComparison.CurrentCultureIgnoreCase))
         {
             if (int.TryParse(input, out var n))
             {
