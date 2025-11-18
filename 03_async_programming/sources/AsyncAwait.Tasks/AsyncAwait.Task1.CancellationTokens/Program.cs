@@ -7,12 +7,12 @@
 * 3. When restarting the calculation, the application should continue working without any failures.
 */
 
-using System;
-
 namespace AsyncAwait.Task1.CancellationTokens;
 
 internal static class Program
 {
+    private static CancellationTokenSource? _cts;
+
     /// <summary> The Main method should not be changed at all.</summary>
     private static void Main()
     {
@@ -30,7 +30,7 @@ internal static class Program
         {
             if (int.TryParse(input, out var n))
             {
-                CalculateSum(n);
+                CalculateSumAsync(n);
             }
             else
             {
@@ -45,16 +45,43 @@ internal static class Program
         Console.ReadLine();
     }
 
-    private static void CalculateSum(int n)
+    private static void CalculateSumAsync(int n)
     {
-        // todo: make calculation asynchronous
-        var sum = Calculator.Calculate(n);
-        Console.WriteLine($"Sum for {n} = {sum}.");
-        Console.WriteLine();
-        Console.WriteLine("Enter N: ");
-        // todo: add code to process cancellation and uncomment this line    
-        // Console.WriteLine($"Sum for {n} cancelled...");
+        // Dispose previous CancellationTokenSource if exists
+        if (_cts != null)
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+        }
 
-        Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        // Start new calculation asynchronously
+        Task.Run(() =>
+        {
+            try
+            {
+                Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
+                long sum = Calculator.Calculate(n, token);
+                if (!token.IsCancellationRequested)
+                {
+                    Console.WriteLine($"Sum for {n} = {sum}.");
+                }
+                else
+                {
+                    Console.WriteLine($"Sum for {n} cancelled...");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"Sum for {n} cancelled...");
+            }
+            finally
+            {
+                Console.WriteLine();
+                Console.WriteLine("Enter N: ");
+            }
+        }, token);
     }
 }
