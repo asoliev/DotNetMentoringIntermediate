@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using CloudServices.Interfaces;
 
 namespace CloudServices;
@@ -23,9 +22,7 @@ public class CloudStatisticService : IStatisticService
         Statistics.AddOrUpdate(url, 1, (key, value) => value + 1);
     }
 
-    /// <summary>
-    /// Gets the amount of visits from Grand Statistic Storage cloud.
-    /// </summary>
+    /// <summary> Gets the amount of visits from Grand Statistic Storage cloud. </summary>
     /// <param name="url">The visited url.</param>
     /// <returns>The amount of registered visits.</returns>
     public async Task<long> GetVisitsCountAsync(string url)

@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace AsyncAwait.Task2.CodeReviewChallenge.Services;
+﻿namespace AsyncAwait.Task2.CodeReviewChallenge.Services;
 
 public class PrivacyDataService : IPrivacyDataService
 {
