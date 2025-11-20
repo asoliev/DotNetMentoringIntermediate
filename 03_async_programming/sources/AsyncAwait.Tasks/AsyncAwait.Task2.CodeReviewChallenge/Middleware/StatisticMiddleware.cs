@@ -6,25 +6,20 @@ namespace AsyncAwait.Task2.CodeReviewChallenge.Middleware;
 public class StatisticMiddleware(RequestDelegate next, IStatisticService statisticService)
 {
     private readonly IStatisticService _statisticService = statisticService ?? throw new ArgumentNullException(nameof(statisticService));
+    private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
 
     public async Task InvokeAsync(HttpContext context)
     {
         string path = context.Request.Path;
 
-        var staticRegTask = Task.Run(
-            () => _statisticService.RegisterVisitAsync(path)
-                .ConfigureAwait(false)
-                .GetAwaiter().OnCompleted(UpdateHeaders));
-        Console.WriteLine(staticRegTask.Status); // just for debugging purposes
+        // Await registration and retrieval of the visit count. Avoid blocking calls and Thread.Sleep.
+        // If you don't want to delay the response by waiting for registration, consider using a proper background queue.
+        await _statisticService.RegisterVisitAsync(path);
 
-        void UpdateHeaders()
-        {
-            context.Response.Headers.Append(
-                CustomHttpHeaders.TotalPageVisits,
-                _statisticService.GetVisitsCountAsync(path).GetAwaiter().GetResult().ToString());
-        }
+        var visits = await _statisticService.GetVisitsCountAsync(path);
 
-        Thread.Sleep(3000); // without this the statistic counter does not work
-        await next(context);
+        context.Response.Headers.Append(CustomHttpHeaders.TotalPageVisits, visits.ToString());
+
+        await _next(context);
     }
 }
