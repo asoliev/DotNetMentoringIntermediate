@@ -6,6 +6,7 @@ using CloudServices.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+#region builder services
 // Service registration
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
@@ -19,11 +20,14 @@ builder.Services.AddSingleton<ISupportService, CloudSupportService>();
 builder.Services.AddSingleton<IPrivacyDataService, PrivacyDataService>();
 builder.Services.AddScoped<IAssistant, ManualAssistant>();
 
-// Add MVC (with endpoint routing disabled, as in your original code)
-builder.Services.AddMvc(options => options.EnableEndpointRouting = false);
+// Use controllers + views and Razor Pages (endpoint routing enabled by default)
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+#endregion
 
 var app = builder.Build();
 
+#region WebApplication configuration
 // Middleware configuration
 // Note: The 'if (false && env.IsDevelopment())' block is always false, so only UseExceptionHandler is used.
 app.UseExceptionHandler("/Home/Error");
@@ -34,12 +38,12 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCookiePolicy();
 
-// UseMvc is still supported for legacy scenarios, but consider migrating to endpoint routing in the future.
-app.UseMvc(routes =>
-{
-    routes.MapRoute(
-        name: "default",
-        template: "{controller=Home}/{action=Index}/{id?}");
-});
+app.UseRouting();
+
+app.MapControllerRoute(
+	name: "default",
+	pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapRazorPages();
+#endregion
 
 await app.RunAsync();
