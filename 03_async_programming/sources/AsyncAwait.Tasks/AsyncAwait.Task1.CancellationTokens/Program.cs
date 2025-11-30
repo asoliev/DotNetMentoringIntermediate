@@ -7,17 +7,14 @@
 * 3. When restarting the calculation, the application should continue working without any failures.
 */
 
-using System;
-
 namespace AsyncAwait.Task1.CancellationTokens;
 
-internal class Program
+internal static class Program
 {
-    /// <summary>
-    /// The Main method should not be changed at all.
-    /// </summary>
-    /// <param name="args"></param>
-    private static void Main(string[] args)
+    private static CancellationTokenSource? _cts;
+
+    /// <summary> The Main method should not be changed at all.</summary>
+    private static void Main()
     {
         Console.WriteLine("Mentoring program L2. Async/await.V1. Task 1");
         Console.WriteLine("Calculating the sum of integers from 0 to N.");
@@ -27,11 +24,21 @@ internal class Program
         Console.WriteLine("Enter N: ");
 
         var input = Console.ReadLine();
-        while (input.Trim().ToUpper() != "Q")
+        // Fix for CS8602: Dereference of a possibly null reference.
+        // Add null check for input before calling Trim().
+        while (input != null && !input.Trim().Equals("Q", StringComparison.CurrentCultureIgnoreCase))
         {
             if (int.TryParse(input, out var n))
             {
-                CalculateSum(n);
+                if (n < 0)
+                {
+                    Console.WriteLine("N must be a non-negative integer. Please try again.");
+                    Console.WriteLine("Enter N: ");
+                    input = Console.ReadLine();
+                    continue;
+                }
+
+                StartCalculateSum(n);
             }
             else
             {
@@ -46,16 +53,43 @@ internal class Program
         Console.ReadLine();
     }
 
-    private static void CalculateSum(int n)
+    private static void StartCalculateSum(int n)
     {
-        // todo: make calculation asynchronous
-        var sum = Calculator.Calculate(n);
-        Console.WriteLine($"Sum for {n} = {sum}.");
-        Console.WriteLine();
-        Console.WriteLine("Enter N: ");
-        // todo: add code to process cancellation and uncomment this line    
-        // Console.WriteLine($"Sum for {n} cancelled...");
+        // Dispose previous CancellationTokenSource if exists
+        if (_cts != null)
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+        }
 
-        Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        // Start new calculation asynchronously
+        Task.Run(() =>
+        {
+            try
+            {
+                Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
+                long sum = Calculator.Calculate(n, token);
+                if (!token.IsCancellationRequested)
+                {
+                    Console.WriteLine($"Sum for {n} = {sum}.");
+                }
+                else
+                {
+                    Console.WriteLine($"Sum for {n} cancelled...");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"Sum for {n} cancelled...");
+            }
+            finally
+            {
+                Console.WriteLine();
+                Console.WriteLine("Enter N: ");
+            }
+        }, token);
     }
 }

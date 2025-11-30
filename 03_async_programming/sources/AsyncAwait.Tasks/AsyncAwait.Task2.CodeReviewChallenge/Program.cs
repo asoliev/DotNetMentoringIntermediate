@@ -1,18 +1,49 @@
-﻿using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
+﻿using AsyncAwait.Task2.CodeReviewChallenge.Extensions;
+using AsyncAwait.Task2.CodeReviewChallenge.Models.Support;
+using AsyncAwait.Task2.CodeReviewChallenge.Services;
+using CloudServices;
+using CloudServices.Interfaces;
 
-namespace AsyncAwait.CodeReviewChallenge;
+var builder = WebApplication.CreateBuilder(args);
 
-public class Program
+#region builder services
+// Service registration
+builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    public static void Main(string[] args)
-    {
-        CreateWebHostBuilder(args).Build().Run();
-    }
+    // This lambda determines whether user consent for non-essential cookies is needed for a given request.
+    options.CheckConsentNeeded = context => true;
+    options.MinimumSameSitePolicy = SameSiteMode.None;
+});
 
-    public static IWebHostBuilder CreateWebHostBuilder(string[] args)
-    {
-        return WebHost.CreateDefaultBuilder(args)
-            .UseStartup<Startup>();
-    }
-}
+builder.Services.AddSingleton<IStatisticService, CloudStatisticService>();
+builder.Services.AddSingleton<ISupportService, CloudSupportService>();
+builder.Services.AddSingleton<IPrivacyDataService, PrivacyDataService>();
+builder.Services.AddScoped<IAssistant, ManualAssistant>();
+
+// Use controllers + views and Razor Pages (endpoint routing enabled by default)
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+#endregion
+
+var app = builder.Build();
+
+#region WebApplication configuration
+// Middleware configuration
+// Note: The 'if (false && env.IsDevelopment())' block is always false, so only UseExceptionHandler is used.
+app.UseExceptionHandler("/Home/Error");
+
+app.UseStatistic();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseCookiePolicy();
+
+app.UseRouting();
+
+app.MapControllerRoute(
+	name: "default",
+	pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapRazorPages();
+#endregion
+
+await app.RunAsync();

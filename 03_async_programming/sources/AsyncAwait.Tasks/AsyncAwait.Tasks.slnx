@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="AsyncAwait.Task1.CancellationTokens/AsyncAwait.Task1.CancellationTokens.csproj" />
+  <Project Path="AsyncAwait.Task2.CodeReviewChallenge/AsyncAwait.Task2.CodeReviewChallenge.csproj" />
+  <Project Path="CloudServices/CloudServices.csproj" />
+</Solution>

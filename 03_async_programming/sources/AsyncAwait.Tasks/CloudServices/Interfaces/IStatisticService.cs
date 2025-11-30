@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace CloudServices.Interfaces;
+﻿namespace CloudServices.Interfaces;
 
 public interface IStatisticService
 {
