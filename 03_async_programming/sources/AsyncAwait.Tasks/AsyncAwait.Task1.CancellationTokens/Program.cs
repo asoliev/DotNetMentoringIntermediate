@@ -30,7 +30,15 @@ internal static class Program
         {
             if (int.TryParse(input, out var n))
             {
-                CalculateSumAsync(n);
+                if (n < 0)
+                {
+                    Console.WriteLine("N must be a non-negative integer. Please try again.");
+                    Console.WriteLine("Enter N: ");
+                    input = Console.ReadLine();
+                    continue;
+                }
+
+                StartCalculateSum(n);
             }
             else
             {
@@ -45,7 +53,7 @@ internal static class Program
         Console.ReadLine();
     }
 
-    private static void CalculateSumAsync(int n)
+    private static void StartCalculateSum(int n)
     {
         // Dispose previous CancellationTokenSource if exists
         if (_cts != null)
