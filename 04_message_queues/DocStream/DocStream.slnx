@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DocStream.CaptureService/DocStream.CaptureService.csproj" />
+  <Project Path="DocStream.ProcessingService/DocStream.ProcessingService.csproj" />
+</Solution>
