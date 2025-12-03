@@ -1,5 +1,4 @@
-﻿using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
+﻿using Azure.Messaging.ServiceBus;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
@@ -11,37 +10,28 @@ internal class Program
     {
         string outputFolder = @"C:\Output";
         string queueName = "file_chunks";
+        string serviceBusConnectionString = "Endpoint=sb://docprocessing-ns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=WUdorXDZVjCI4hVVvYHlWAl3V3vw03KrY+ASbPHWhTQ=";
 
-        var factory = new ConnectionFactory() { HostName = "localhost" };
-        using var connection = await factory.CreateConnectionAsync();
-        using var channel = await connection.CreateChannelAsync();
-        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false);
-
-        var consumer = new AsyncEventingBasicConsumer(channel);
-        consumer.ReceivedAsync += (model, ea) =>
+        var client = new ServiceBusClient(serviceBusConnectionString);
+        var processor = client.CreateSessionProcessor(queueName, new ServiceBusSessionProcessorOptions
         {
-            byte[] body = ea.Body.ToArray();
-            if (body == null || body.Length == 0)
-                return Task.CompletedTask;
+            MaxConcurrentSessions = 2,
+            AutoCompleteMessages = false
+        });
 
-            var body_str = System.Text.Encoding.UTF8.GetString(body);
-            if (string.IsNullOrEmpty(body_str))
-                return Task.CompletedTask;
-
-            var message = JsonSerializer.Deserialize<ChunkMessage>(body_str);
-            if (message == null)
-                return Task.CompletedTask;
-
+        processor.ProcessMessageAsync += async args =>
+        {
+            var body = args.Message.Body.ToString();
+            var message = JsonSerializer.Deserialize<ChunkMessage>(body);
             var chunkData = Convert.FromBase64String(message.Data);
 
-            List<(int, byte[])> list = fileChunks.GetOrAdd(message.FileId, _ => []);
+            var list = fileChunks.GetOrAdd(message.FileId, _ => new List<(int, byte[])>());
             list.Add((message.ChunkNumber, chunkData));
 
             if (list.Count == message.TotalChunks)
             {
                 var ordered = list.OrderBy(x => x.Item1).Select(x => x.Item2).ToList();
-                var outputPath = Path.Combine(outputFolder, message
-.FileName);
+                var outputPath = Path.Combine(outputFolder, message.FileName);
                 using (var fs = new FileStream(outputPath, FileMode.Create))
                 {
                     foreach (var chunk in ordered)
@@ -50,11 +40,21 @@ internal class Program
                 fileChunks.TryRemove(message.FileId, out _);
                 Console.WriteLine($"Reassembled and saved file: {outputPath}");
             }
+            await args.CompleteMessageAsync(args.Message);
+        };
+
+        processor.ProcessErrorAsync += args =>
+        {
+            Console.WriteLine($"Error: {args.Exception}");
             return Task.CompletedTask;
         };
-        await channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer: consumer);
+
+        await processor.StartProcessingAsync();
         Console.WriteLine("Listening for file chunks...");
         Console.ReadLine();
+        await processor.StopProcessingAsync();
+        await processor.DisposeAsync();
+        await client.DisposeAsync();
     }
 
     public class ChunkMessage

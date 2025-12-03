@@ -1,4 +1,4 @@
-﻿using RabbitMQ.Client;
+﻿using Azure.Messaging.ServiceBus;
 using System.Text.Json;
 
 internal class Program
@@ -7,12 +7,11 @@ internal class Program
     {
         string inputFolder = @"C:\Input";
         string queueName = "file_chunks";
-        int chunkSize = 1024 * 1024 * 4; // 4MB per chunk
+        string serviceBusConnectionString = "Endpoint=sb://docprocessing-ns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=WUdorXDZVjCI4hVVvYHlWAl3V3vw03KrY+ASbPHWhTQ=";
+        int chunkSize = 1024 * 1024 * 4; // 4MB
 
-        var factory = new ConnectionFactory() { HostName = "localhost" };
-        using var connection = await factory.CreateConnectionAsync();
-        using var channel = await connection.CreateChannelAsync();
-        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false);
+        var client = new ServiceBusClient(serviceBusConnectionString);
+        var sender = client.CreateSender(queueName);
 
         var watcher = new FileSystemWatcher(inputFolder, "*.pdf");
         watcher.Created += async (s, e) =>
@@ -24,7 +23,7 @@ internal class Program
 
             for (int i = 0; i < totalChunks; i++)
             {
-                var message = new
+                var messageObj = new
                 {
                     FileId = fileId,
                     FileName = Path.GetFileName(e.FullPath),
@@ -32,14 +31,21 @@ internal class Program
                     TotalChunks = totalChunks,
                     Data = Convert.ToBase64String(chunks[i])
                 };
-                var body = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
-                await channel.BasicPublishAsync(exchange: "", routingKey: queueName, body: body);
+                var messageBody = JsonSerializer.Serialize(messageObj);
+                var message = new ServiceBusMessage(messageBody)
+                {
+                    MessageId = $"{fileId}-{i}",
+                    SessionId = fileId // Ensures all chunks for a file are grouped
+                };
+                await sender.SendMessageAsync(message);
             }
             Console.WriteLine($"Sent {totalChunks} chunks for {e.Name}");
         };
         watcher.EnableRaisingEvents = true;
         Console.WriteLine("Watching for new files...");
         Console.ReadLine();
+        await sender.DisposeAsync();
+        await client.DisposeAsync();
     }
 
     static IEnumerable<byte[]> SplitFile(string filePath, int chunkSize)
