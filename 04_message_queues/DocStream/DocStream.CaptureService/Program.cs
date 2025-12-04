@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using DocStream.Shared;
 using System.Text.Json;
 
 namespace DocStream.CaptureService.Producer;
@@ -7,30 +8,21 @@ namespace DocStream.CaptureService.Producer;
 internal class Program
 {
     private static ServiceBusSender senderInstance;
-    private static int chunkSize;
 
     private static async Task Main()
     {
-        string inputFolder = @"C:\Users\Abdukodir_Soliev\Downloads\MessageQueue\Input";
-        string queueName = "filechunks";
-        string serviceBusConnectionString = "Endpoint=sb://docprocessing-ns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=WUdorXDZVjCI4hVVvYHlWAl3V3vw03KrY+ASbPHWhTQ=";
+        var client = new ServiceBusClient(AppConfig.ServiceBusConnectionString);
+        senderInstance = client.CreateSender(AppConfig.QueueName);
 
-        // Adjust chunk size to account for Base64 encoding overhead
-        // The message size includes the base64-encoded chunk, plus JSON and headers.
-        // Base64 encoding increases size by ~33 %.For example, a 220 KB binary chunk becomes ~293 KB when base64 - encoded.
-        // The JSON envelope adds more bytes.
-        chunkSize = 170 * 1024; //For 256 KB: 262,144 / 1.37 ≈ 191,400 bytes (about 187 KB)
+        if (!Directory.Exists(AppConfig.InputFolder))
+            Directory.CreateDirectory(AppConfig.InputFolder);
 
-        var client = new ServiceBusClient(serviceBusConnectionString);
-        senderInstance = client.CreateSender(queueName);
+        var watcher = new FileSystemWatcher(AppConfig.InputFolder, "*.pdf");
 
-        if (!Directory.Exists(inputFolder))
-            Directory.CreateDirectory(inputFolder);
-
-        var watcher = new FileSystemWatcher(inputFolder, "*.pdf");
         watcher.Changed += (s, e) => { PrintWithTimestamp("Watcher.Changed"); };
         watcher.Created += OnFileCreated;
         watcher.EnableRaisingEvents = true;
+
         PrintWithTimestamp("Watching for new files...");
         Console.ReadLine();
 
@@ -51,32 +43,11 @@ internal class Program
 
             // Now process the file
             var fileId = Guid.NewGuid().ToString();
-            var chunks = SplitFile(e.FullPath, chunkSize).ToList();
+            var chunks = SplitFile(e.FullPath, AppConfig.ChunkSize).ToList();
+            string fileHash = Utils.ComputeSHA256(e.FullPath);
             int totalChunks = chunks.Count;
-            string fileHash = ComputeSHA256(e.FullPath);
 
-            for (int i = 0; i < totalChunks; i++)
-            {
-                var messageObj = new
-                {
-                    FileId = fileId,
-                    FileName = Path.GetFileName(e.FullPath),
-                    ChunkNumber = i,
-                    TotalChunks = totalChunks,
-                    Data = Convert.ToBase64String(chunks[i]),
-                    FileHash = i == 0 ? fileHash : null // Only first chunk carries the hash
-                };
-                var messageBody = JsonSerializer.Serialize(messageObj);
-                var message = new ServiceBusMessage(messageBody)
-                {
-                    MessageId = $"{fileId}-{i}",
-                    SessionId = fileId // Ensures all chunks for a file are grouped
-                };
-                await senderInstance.SendMessageAsync(message);
-
-                // Optional: show sending progress
-                PrintProgressBar(i + 1, totalChunks, Path.GetFileName(e.FullPath));
-            }
+            await SendChunksAsync(fileId, e.FullPath, fileHash, chunks, totalChunks);
 
             PrintWithTimestamp($"Sent {totalChunks} chunks for {e.Name} (FileId: {fileId})");
         }
@@ -84,12 +55,36 @@ internal class Program
         {
             PrintWithTimestamp($"Error sending file '{e.FullPath}': {ex.Message}");
         }
-    };
-
-    static void PrintWithTimestamp(string message)
-    {
-        Console.WriteLine($"[{DateTime.Now:yyyy/MMM/dd-HH:mm:ss}] {message}");
     }
+
+    private static async Task SendChunksAsync(string fileId, string filePath, string fileHash, List<byte[]> chunks, int totalChunks)
+    {
+        for (int i = 0; i < totalChunks; i++)
+        {
+            var messageObj = new
+            {
+                FileId = fileId,
+                FileName = Path.GetFileName(filePath),
+                ChunkNumber = i,
+                TotalChunks = totalChunks,
+                Data = Convert.ToBase64String(chunks[i]),
+                FileHash = i == 0 ? fileHash : null // Only first chunk carries the hash
+            };
+            var messageBody = JsonSerializer.Serialize(messageObj);
+            var message = new ServiceBusMessage(messageBody)
+            {
+                MessageId = $"{fileId}-{i}",
+                SessionId = fileId
+            };
+            await senderInstance.SendMessageAsync(message);
+
+            // Optional: show sending progress
+            PrintProgressBar(i + 1, totalChunks, Path.GetFileName(filePath));
+        }
+    }
+
+    static void PrintWithTimestamp(string message) => Console.WriteLine($"[{DateTime.Now:yyyy/MMM/dd-HH:mm:ss}] {message}");
+
     private static void PrintProgressBar(int sent, int total, string fileName, int barSize = 30)
     {
         double percent = (double)sent / total;
@@ -123,19 +118,13 @@ internal class Program
             }
         }
     }
-    private static string ComputeSHA256(string filePath)
-    {
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        using var stream = File.OpenRead(filePath);
-        var hash = sha256.ComputeHash(stream);
-        return Convert.ToHexStringLower(hash);//Convert.ToHexStringLower(hash);
-    }
+
     private static bool IsFileLocked(string file)
     {
         try
         {
-            using (FileStream stream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.None))
-                return false;
+            using FileStream stream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.None);
+            return false;
         }
         catch (IOException)
         {
