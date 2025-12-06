@@ -14,10 +14,9 @@ static string GeneratePasswordHashUsingSalt(string passwordText, byte[] salt)
         hashSize
     );
 
-    var hashBytes = new byte[saltSize + hashSize];
-
-    Buffer.BlockCopy(salt, 0, hashBytes, 0, saltSize);
-    Buffer.BlockCopy(hash, 0, hashBytes, 16, hashSize);
+    Span<byte> hashBytes = stackalloc byte[saltSize + hashSize];
+    salt.CopyTo(hashBytes);
+    hash.CopyTo(hashBytes[saltSize..]);
 
     return Convert.ToBase64String(hashBytes);//passwordHash
 }
@@ -29,4 +28,5 @@ Console.WriteLine($"Generated Salt (Base64): {Convert.ToBase64String(saltBytes)}
 
 string result = GeneratePasswordHashUsingSalt("MySecure", saltBytes);
 Console.WriteLine($"passwordHash: {result}");
+
 Console.ReadKey();
