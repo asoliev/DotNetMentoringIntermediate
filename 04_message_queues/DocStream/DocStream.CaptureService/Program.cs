@@ -10,6 +10,7 @@ internal class Program
 {
     private const int FileLockCheckIntervalMs = 500;
     private static readonly TimeSpan FileLockTimeout = TimeSpan.FromSeconds(30); // adjust as needed
+    private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(5);
 
     private static async Task Main()
     {
@@ -93,39 +94,46 @@ internal class Program
         await using var client = new ServiceBusClient(AppConfig.ServiceBusConnectionString, clientOptions);
         await using var sender = client.CreateSender(AppConfig.QueueName);
 
-        //ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
-        var messages = new List<ServiceBusMessage>();
         for (int i = 0; i < totalChunks; i++)
         {
-            var messageObj = new
-            {
-                FileId = fileId,
-                FileName = fileName,
-                ChunkNumber = i,
-                TotalChunks = totalChunks,
-                Data = Convert.ToBase64String(chunks[i]),
-                FileHash = i == 0 ? fileHash : null // Only first chunk carries the hash
-            };
-            var messageBody = JsonSerializer.Serialize(messageObj);
-            var message = new ServiceBusMessage(messageBody)
-            {
-                MessageId = $"{fileId}-{i}",
-                SessionId = fileId
-            };
-            messages.Add(message);
+            var message = CreateMessageForChunk(fileId, fileName, fileHash, chunks[i], i, totalChunks);
 
-            // Create a new batch for each chunk
-            using ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
-            if (!messageBatch.TryAddMessage(message))
-                throw new Exception("Chunk is too large to fit in a single ServiceBusMessageBatch.");
-
-            // Set a timeout (e.g., 5 seconds)
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await sender.SendMessagesAsync(messageBatch);
+            await SendMessageBatchWithTimeoutAsync(sender, message, SendTimeout);
 
             // Optional: show sending progress
             PrintProgressBar(i + 1, totalChunks, fileName);
         }
+    }
+
+    private static ServiceBusMessage CreateMessageForChunk(string fileId, string? fileName, string fileHash, byte[] chunkData, int chunkNumber, int totalChunks)
+    {
+        object messageObj = (
+            FileId: fileId,
+            FileName: fileName,
+            ChunkNumber: chunkNumber,
+            TotalChunks: totalChunks,
+            Data: Convert.ToBase64String(chunkData),
+            FileHash: chunkNumber == 0 ? fileHash : null // Only first chunk carries the hash
+        );
+
+        string messageBody = JsonSerializer.Serialize(messageObj);
+        ServiceBusMessage message = new(messageBody)
+        {
+            MessageId = $"{fileId}-{chunkNumber}",
+            SessionId = fileId
+        };
+
+        return message;
+    }
+
+    private static async Task SendMessageBatchWithTimeoutAsync(ServiceBusSender sender, ServiceBusMessage message, TimeSpan timeout)
+    {
+        using ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
+        if (!messageBatch.TryAddMessage(message))
+            throw new Exception("Chunk is too large to fit in a single ServiceBusMessageBatch.");
+
+        using var cts = new CancellationTokenSource(timeout);
+        await sender.SendMessagesAsync(messageBatch, cts.Token);
     }
 
     private static void PrintProgressBar(int sent, int total, string? fileName, int barSize = 30)
