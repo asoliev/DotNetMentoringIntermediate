@@ -50,7 +50,7 @@ internal static class Program
                     await writer.WriteLineAsync($"NAME:{name}");
                     Console.WriteLine($"[CLIENT-ASYNC] Connected as {name}");
 
-                    var receiveTask = Task.Run(() => ReceiveLoopAsync(reader, log, Cts.Token), Cts.Token);
+                    Task receiveTask = ReceiveLoopAsync(reader, log, Cts.Token);
 
                     var toSend = Random.Next(3, 7);
                     for (var i = 0; i < toSend && !Cts.IsCancellationRequested; i++)
