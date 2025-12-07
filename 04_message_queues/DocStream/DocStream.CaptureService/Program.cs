@@ -1,5 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using DocStream.Shared;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace DocStream.CaptureService.Producer;
@@ -7,6 +8,9 @@ namespace DocStream.CaptureService.Producer;
 /// <summary> Producer </summary>
 internal class Program
 {
+    private const int FileLockCheckIntervalMs = 500;
+    private static readonly TimeSpan FileLockTimeout = TimeSpan.FromSeconds(30); // adjust as needed
+
     private static async Task Main()
     {
         using var watcher = new FileSystemWatcher(AppConfig.InputFolder, "*.pdf");
@@ -19,7 +23,7 @@ internal class Program
         Console.ReadLine();
     }
 
-    private static void OnFileCreated(object sender, FileSystemEventArgs e) => _ = HandleFileCreatedAsync(e);// Fire-and-forget the async worker; the worker itself handles exceptions.
+    private static void OnFileCreated(object sender, FileSystemEventArgs e) => _ = HandleFileCreatedAsync(e); // Fire-and-forget the async worker; the worker itself handles exceptions.
 
     private static async Task HandleFileCreatedAsync(FileSystemEventArgs e)
     {
@@ -27,9 +31,16 @@ internal class Program
         {
             Utils.PrintWithTimestamp($"Detected new file: {e.FullPath}");
 
-            // Wait for the file to be fully written
-            while (IsFileLocked(e.FullPath))
-                await Task.Delay(500);
+            // Wait for the file to be fully written, but enforce a timeout to avoid infinite waits.
+            if (!await WaitForFileReadyAsync(e.FullPath))
+                return;
+
+            // Double-check file still exists before proceeding
+            if (!File.Exists(e.FullPath))
+            {
+                Utils.PrintWithTimestamp($"File disappeared before processing: {e.FullPath}");
+                return;
+            }
 
             // Now process the file
             var chunks = SplitFile(e.FullPath, AppConfig.ChunkSize).ToList();
@@ -47,6 +58,30 @@ internal class Program
             // Centralized exception handling (prevents unobserved exceptions)
             Utils.PrintWithTimestamp($"Error sending file '{e.FullPath}': {ex.Message}");
         }
+    }
+
+    private static async Task<bool> WaitForFileReadyAsync(string filePath)
+    {
+        var sw = Stopwatch.StartNew();
+        while (IsFileLocked(filePath))
+        {
+            if (sw.Elapsed > FileLockTimeout)
+            {
+                Utils.PrintWithTimestamp($"Timeout waiting for file to be released: {filePath} after {FileLockTimeout.TotalSeconds:F0}s. Aborting processing for this file.");
+                return false; // Abort processing to avoid infinite loop
+            }
+
+            // If the file was deleted or moved while waiting, stop trying.
+            if (!File.Exists(filePath))
+            {
+                Utils.PrintWithTimestamp($"File no longer exists while waiting: {filePath}. Aborting.");
+                return false;
+            }
+
+            await Task.Delay(FileLockCheckIntervalMs);
+        }
+
+        return true;
     }
 
     private static async Task SendChunksAsync(string fileId, string? fileName, string fileHash, List<byte[]> chunks, int totalChunks)
