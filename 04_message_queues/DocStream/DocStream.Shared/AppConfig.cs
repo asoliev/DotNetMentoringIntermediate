@@ -4,11 +4,11 @@ public class AppConfig
 {
     public static string ServiceBusConnectionString => "Endpoint=sb://docprocessing-ns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=WUdorXDZVjCI4hVVvYHlWAl3V3vw03KrY+ASbPHWhTQ=";
 
-    public static string QueueName => "filechunks";
+    public static string QueueName => "filechunks2";
 
-    public static string InputFolder => @"C:\Users\Abdukodir_Soliev\Downloads\MessageQueue\Input";
+    public static string InputFolder => @"C:\src\MQ\In";
 
-    public static string OutputFolder => @"C:\Users\Abdukodir_Soliev\Downloads\MessageQueue\Output";
+    public static string OutputFolder => @"C:\src\MQ\Out";
 
     /// <summary>
     /// Gets the default chunk size, in bytes, used for processing data in segments.

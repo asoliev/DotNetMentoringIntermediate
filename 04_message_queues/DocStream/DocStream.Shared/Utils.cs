@@ -73,7 +73,6 @@ public static class Utils
 
     public static void PrintWithTimestamp(string message) => Console.WriteLine($"[{DateTime.Now:yyyy/MMM/dd-HH:mm:ss}] {message}");
 
-
     /// <summary>
     /// Displays a progress bar in the console to indicate the status of a file reception operation.
     /// </summary>
@@ -109,5 +108,4 @@ public static class Utils
 
         PrintColoredLine(progress, color, line);
     }
-
 }
