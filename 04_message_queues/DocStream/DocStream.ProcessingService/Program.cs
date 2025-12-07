@@ -1,8 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using DocStream.Shared;
-using Microsoft.Azure.Amqp.Framing;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace DocStream.ProcessingService.Consumer;
@@ -11,7 +9,7 @@ namespace DocStream.ProcessingService.Consumer;
 public class Program
 {
     #region State
-    private static readonly ConcurrentDictionary<string, List<(int, byte[])>> fileChunks = new();
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<int, byte[]>> fileChunks = new();
     private static readonly ConcurrentDictionary<string, (int line, int totalChunks, string fileName)> fileProgress = new();
     private static readonly ConcurrentDictionary<string, DateTime> fileStartTimes = new();
     private static readonly ConcurrentDictionary<string, long> fileBytesReceived = new();
@@ -68,7 +66,7 @@ public class Program
 
             StoreExpectedHash(message);
 
-            var list = AddChunkToFile(message.FileId, message.ChunkNumber, chunkData);
+            var chunks = AddChunkToFile(message.FileId, message.ChunkNumber, chunkData);
 
             var (line, totalChunks, fileName) = GetOrCreateProgressInfo(message.FileId, message.TotalChunks, message.FileName);
 
@@ -76,7 +74,7 @@ public class Program
 
             UpdateBytesReceived(message.FileId, chunkData.Length);
 
-            int received = list.Count;
+            int received = chunks.Count;
             int total = message.TotalChunks;
             var (eta, speedKBps) = ComputeTransferMetrics(message.FileId, received, total);
 
@@ -84,7 +82,7 @@ public class Program
 
             if (received == total)
             {
-                var outputPath = ReassembleFile(message.FileId, fileName, list);
+                var outputPath = ReassembleFile(message.FileId, fileName, chunks);
 
                 HandleIntegrityCheck(message.FileId, fileName, outputPath, line + 5, speedKBps, received, total);
 
@@ -122,11 +120,12 @@ public class Program
             fileExpectedHashes[message.FileId] = message.FileHash;
     }
 
-    private static List<(int, byte[])> AddChunkToFile(string fileId, int chunkNumber, byte[] chunkData)
+    private static ConcurrentDictionary<int, byte[]> AddChunkToFile(string fileId, int chunkNumber, byte[] chunkData)
     {
-        List<(int, byte[])> list = fileChunks.GetOrAdd(fileId, _ => []);
-        list.Add((chunkNumber, chunkData));
-        return list;
+        var dict = fileChunks.GetOrAdd(fileId, _ => new ConcurrentDictionary<int, byte[]>());
+        // Use indexer to add or replace safely
+        dict[chunkNumber] = chunkData;
+        return dict;
     }
 
     private static (int line, int totalChunks, string fileName) GetOrCreateProgressInfo(string fileId, int totalChunks, string fileName)
@@ -150,7 +149,7 @@ public class Program
     private static void UpdateBytesReceived(string fileId, int chunkLength)
         => fileBytesReceived.AddOrUpdate(fileId, chunkLength, (k, v) => v + chunkLength);
 
-    private static (TimeSpan? eta, double speedMBps) ComputeTransferMetrics(string fileId, int received, int total)
+    private static (TimeSpan? eta, double speedKBps) ComputeTransferMetrics(string fileId, int received, int total)
     {
         if (received <= 1)
             return (null, 0);
@@ -199,24 +198,23 @@ public class Program
             Console.ResetColor();
         }
     }
-    private static string ReassembleFile(string fileId, string fileName, List<(int, byte[])> chunks)
+    private static string ReassembleFile(string fileId, string fileName, ConcurrentDictionary<int, byte[]> chunks)
     {
-        var ordered = chunks.OrderBy(x => x.Item1).Select(x => x.Item2).ToList();
+        var ordered = chunks.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
         var outputPath = Path.Combine(AppConfig.OutputFolder, fileName);
         using (var fs = new FileStream(outputPath, FileMode.Create))
         {
             foreach (var chunk in ordered)
                 fs.Write(chunk, 0, chunk.Length);
         }
-        fileChunks.TryRemove(fileId, out _);
         return outputPath;
     }
-    private static void HandleIntegrityCheck(string fileId, string fileName, string outputPath, int line, double speedMBps, int received, int total)
+    private static void HandleIntegrityCheck(string fileId, string fileName, string outputPath, int line, double speedKBps, int received, int total)
     {
         string computedHash = Utils.ComputeSHA256(outputPath);
         bool valid = fileExpectedHashes.TryGetValue(fileId, out var expectedHash) && expectedHash == computedHash;
 
-        PrintProgressBar(received, total, fileName, line, null, speedMBps, completed: true);
+        PrintProgressBar(received, total, fileName, line, null, speedKBps, completed: true);
 
         if (valid)
             PrintColoredLine($"Integrity check PASSED for '{fileName}' (SHA256: {computedHash})", ConsoleColor.Green, line);
