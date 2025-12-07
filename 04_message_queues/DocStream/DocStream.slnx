@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="DocStream.CaptureService/DocStream.CaptureService.Producer.csproj" />
-  <Project Path="DocStream.ProcessingService/DocStream.ProcessingService.Consumer.csproj" />
+  <Project Path="DocStream.CaptureService/DocStream.CaptureService.csproj" />
+  <Project Path="DocStream.ProcessingService/DocStream.ProcessingService.csproj" />
   <Project Path="DocStream.Shared/DocStream.Shared.csproj" Id="7196e499-f803-469c-8004-d74a2bf9a1ac" />
 </Solution>
