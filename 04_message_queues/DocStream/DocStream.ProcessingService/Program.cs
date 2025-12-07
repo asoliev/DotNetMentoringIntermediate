@@ -8,20 +8,20 @@ using System.Text.Json;
 namespace DocStream.ProcessingService.Consumer;
 
 /// <summary> Consumer </summary>
-class Program
+public class Program
 {
     #region State
-    static readonly ConcurrentDictionary<string, List<(int, byte[])>> fileChunks = new();
-    static ConcurrentDictionary<string, (int line, int totalChunks, string fileName)> fileProgress = new();
-    static ConcurrentDictionary<string, DateTime> fileStartTimes = new();
-    static ConcurrentDictionary<string, long> fileBytesReceived = new();
-    static ConcurrentDictionary<string, string> fileExpectedHashes = new();
+    private static readonly ConcurrentDictionary<string, List<(int, byte[])>> fileChunks = new();
+    private static readonly ConcurrentDictionary<string, (int line, int totalChunks, string fileName)> fileProgress = new();
+    private static readonly ConcurrentDictionary<string, DateTime> fileStartTimes = new();
+    private static readonly ConcurrentDictionary<string, long> fileBytesReceived = new();
+    private static readonly ConcurrentDictionary<string, string> fileExpectedHashes = new();
 
-    static object consoleLock = new();
-    static int nextLine = 0;
-    static int barSize = 30;
+    private static object consoleLock = new();
+    private static int nextLine = 0;
+    private static int barSize = 30;
 
-    public class ChunkMessage
+    private class ChunkMessage
     {
         public required string FileId { get; set; }
         public required string FileName { get; set; }
@@ -70,7 +70,7 @@ class Program
 
             var list = AddChunkToFile(message.FileId, message.ChunkNumber, chunkData);
 
-            var progressInfo = GetOrCreateProgressInfo(message.FileId, message.TotalChunks, message.FileName);
+            var (line, totalChunks, fileName) = GetOrCreateProgressInfo(message.FileId, message.TotalChunks, message.FileName);
 
             RecordStartTime(message.FileId);
 
@@ -80,13 +80,13 @@ class Program
             int total = message.TotalChunks;
             var (eta, speedKBps) = ComputeTransferMetrics(message.FileId, received, total);
 
-            PrintProgressBar(received, total, progressInfo.fileName, progressInfo.line + 3, eta, speedKBps);
+            PrintProgressBar(received, total, fileName, line + 3, eta, speedKBps);
 
             if (received == total)
             {
-                var outputPath = ReassembleFile(progressInfo.fileName, list);
+                var outputPath = ReassembleFile(message.FileId, fileName, list);
 
-                HandleIntegrityCheck(message.FileId, progressInfo.fileName, outputPath, progressInfo.line + 5, speedKBps, received, total);
+                HandleIntegrityCheck(message.FileId, fileName, outputPath, line + 5, speedKBps, received, total);
 
                 CleanupFileState(message.FileId);
             }
@@ -106,7 +106,15 @@ class Program
     }
 
     #region Helpers
-    private static ChunkMessage DeserializeChunkMessage(string body) => JsonSerializer.Deserialize<ChunkMessage>(body);
+    private static ChunkMessage DeserializeChunkMessage(string body)
+    {
+        var msg = JsonSerializer.Deserialize<ChunkMessage>(body);
+        if (msg is null)
+            throw new InvalidDataException("Failed to deserialize chunk message (null).");
+        if (string.IsNullOrWhiteSpace(msg.FileId))
+            throw new InvalidDataException("Chunk message missing FileId.");
+        return msg;
+    }
 
     private static void StoreExpectedHash(ChunkMessage message)
     {
@@ -159,22 +167,7 @@ class Program
         return (eta, speedKBps);
     }
 
-    /// <summary>
-    /// Displays a progress bar in the console to indicate the status of a file reception operation.
-    /// </summary>
-    /// <remarks>This method updates the progress bar in-place at the specified console line, allowing for
-    /// real-time feedback during file reception. The method is thread-safe and intended for use in console applications
-    /// where visual progress indication is required.</remarks>
-    /// <param name="received">The number of data chunks that have been received so far. Must be between 0 and <paramref name="total"/>.</param>
-    /// <param name="total">The total number of data chunks expected to be received. Must be greater than zero.</param>
-    /// <param name="fileName">The name of the file being received. Used for display purposes in the progress bar.</param>
-    /// <param name="line">The console line number at which the progress bar should be rendered.</param>
-    /// <param name="eta">An optional estimated time remaining for the operation. If specified, it can be used to inform the user of the
-    /// expected completion time.</param>
-    /// <param name="speedMBps">The current speed of data reception in kilobytes per second. Used for display purposes.</param>
-    /// <param name="completed">Indicates whether the file reception has been completed. If true, the progress bar will indicate completion.</param>
-    /// <param name="barSize">The total width, in characters, of the progress bar. Defaults to 30 if not specified.</param>
-    private static void PrintProgressBar(int received, int total, string fileName, int line, TimeSpan? eta, double speedMBps, bool completed = false)
+    private static void PrintProgressBar(int received, int total, string fileName, int consoleLine, TimeSpan? eta, double speedKBps, bool completed = false)
     {
         double percent = (double)received / total;
         int filled = (int)(percent * barSize);
@@ -182,7 +175,7 @@ class Program
         string bar = new string('█', filled) + new string('-', empty);
 
         string etaStr = eta.HasValue ? $" | ETA: {eta.Value:mm\\:ss}" : "";
-        string speedStr = speedMBps > 0 ? $" | {speedMBps:F2} Kb/s" : "";
+        string speedStr = speedKBps > 0 ? $" | {speedKBps:F2} Kb/s" : "";
 
         string progress = completed
             ? $"Completed '{fileName}' and saved to output."
@@ -192,7 +185,7 @@ class Program
             : percent >= 0.8 ? ConsoleColor.Yellow
             : ConsoleColor.Cyan;
 
-        PrintColoredLine(progress, color, line);
+        PrintColoredLine(progress, color, consoleLine);
     }
 
     private static void PrintColoredLine(string message, ConsoleColor color, int? line = null)
@@ -206,7 +199,7 @@ class Program
             Console.ResetColor();
         }
     }
-    private static string ReassembleFile(string fileName, List<(int, byte[])> chunks)
+    private static string ReassembleFile(string fileId, string fileName, List<(int, byte[])> chunks)
     {
         var ordered = chunks.OrderBy(x => x.Item1).Select(x => x.Item2).ToList();
         var outputPath = Path.Combine(AppConfig.OutputFolder, fileName);
@@ -215,7 +208,7 @@ class Program
             foreach (var chunk in ordered)
                 fs.Write(chunk, 0, chunk.Length);
         }
-        fileChunks.TryRemove(fileName, out _);
+        fileChunks.TryRemove(fileId, out _);
         return outputPath;
     }
     private static void HandleIntegrityCheck(string fileId, string fileName, string outputPath, int line, double speedMBps, int received, int total)
@@ -236,6 +229,7 @@ class Program
         fileStartTimes.TryRemove(fileId, out _);
         fileBytesReceived.TryRemove(fileId, out _);
         fileExpectedHashes.TryRemove(fileId, out _);
+        fileChunks.TryRemove(fileId, out _);
     }
     #endregion
 }
