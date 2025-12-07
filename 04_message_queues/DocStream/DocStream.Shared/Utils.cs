@@ -12,14 +12,6 @@ public static class Utils
         return Convert.ToHexStringLower(hash);
     }
 
-    /// <summary>
-    /// Asynchronously waits until the specified file is no longer locked and is ready for access.
-    /// </summary>
-    /// <remarks>This method periodically checks the file's lock status and returns only when the file is
-    /// available. Use this method to ensure that a file is not in use by another process before attempting to read or
-    /// write to it.</remarks>
-    /// <param name="filePath">The full path of the file to check for readiness. Cannot be null or empty.</param>
-    /// <returns>A task that completes when the file at the specified path is ready for access.</returns>
     public static async Task WaitForFileReady(string filePath)
     {
         ArgumentNullException.ThrowIfNull(filePath);

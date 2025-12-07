@@ -19,7 +19,9 @@ internal class Program
         Console.ReadLine();
     }
 
-    private static async void OnFileCreated(object sender, FileSystemEventArgs e)
+    private static void OnFileCreated(object sender, FileSystemEventArgs e) => _ = HandleFileCreatedAsync(e);// Fire-and-forget the async worker; the worker itself handles exceptions.
+
+    private static async Task HandleFileCreatedAsync(FileSystemEventArgs e)
     {
         try
         {
@@ -42,6 +44,7 @@ internal class Program
         }
         catch (Exception ex)
         {
+            // Centralized exception handling (prevents unobserved exceptions)
             Utils.PrintWithTimestamp($"Error sending file '{e.FullPath}': {ex.Message}");
         }
     }
