@@ -82,7 +82,7 @@ public class Program
 
             if (received == total)
             {
-                var outputPath = ReassembleFile(message.FileId, fileName, chunks);
+                var outputPath = ReassembleFile(fileName, chunks);
 
                 HandleIntegrityCheck(message.FileId, fileName, outputPath, line + 5, speedKBps, received, total);
 
@@ -198,7 +198,7 @@ public class Program
             Console.ResetColor();
         }
     }
-    private static string ReassembleFile(string fileId, string fileName, ConcurrentDictionary<int, byte[]> chunks)
+    private static string ReassembleFile(string fileName, ConcurrentDictionary<int, byte[]> chunks)
     {
         var ordered = chunks.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
         var outputPath = Path.Combine(AppConfig.OutputFolder, fileName);
