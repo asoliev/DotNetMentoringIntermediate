@@ -19,7 +19,6 @@ internal static class Program
         "Anyone free for code review?"
     };
 
-    private static readonly Random Random = new();
     private static volatile bool _isRunning = true;
 
     private static void Main()
@@ -54,17 +53,17 @@ internal static class Program
                 var receiverThread = new Thread(() => ReceiveLoop(reader, log));
                 receiverThread.Start();
 
-                var messagesToSend = Random.Next(2, 6);
+                var messagesToSend = Random.Shared.Next(2, 6);
                 for (var i = 0; i < messagesToSend && _isRunning; i++)
                 {
-                    var message = Messages[Random.Next(Messages.Length)];
+                    var message = Messages[Random.Shared.Next(Messages.Length)];
                     writer.WriteLine($"MSG:{message}");
                     Console.WriteLine($"[CLIENT] Sent: {message}");
-                    Thread.Sleep(Random.Next(400, 1200));
+                    Thread.Sleep(Random.Shared.Next(400, 1200));
                 }
 
                 // give some time to collect responses
-                Thread.Sleep(Random.Next(500, 1500));
+                Thread.Sleep(Random.Shared.Next(500, 1500));
 
                 tcpClient.Close(); // triggers EOF on server side
                 receiverThread.Join();
@@ -74,7 +73,7 @@ internal static class Program
                 Console.WriteLine($"[CLIENT] Error: {ex.Message}");
             }
 
-            Thread.Sleep(Random.Next(1500, 2500));
+            Thread.Sleep(Random.Shared.Next(1500, 2500));
         }
 
         Console.WriteLine("[CLIENT] Bye.");
