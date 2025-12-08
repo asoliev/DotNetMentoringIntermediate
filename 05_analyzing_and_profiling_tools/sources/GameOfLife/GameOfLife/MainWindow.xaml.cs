@@ -19,6 +19,19 @@ namespace GameOfLife
             timer = new DispatcherTimer();
             timer.Tick += OnTimer;
             timer.Interval = TimeSpan.FromMilliseconds(200);
+            
+            this.Closed += MainWindow_Closed;
+        }
+
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            mainGrid?.Dispose();
+            if (timer != null)
+            {
+                timer.Stop();
+                timer.Tick -= OnTimer;
+                timer = null;
+            }
         }
 
         private void StartAd()
@@ -39,8 +52,11 @@ namespace GameOfLife
         {
             for (int i = 0; i < 2; i++)
             {
-                adWindow[i].Closed -= AdWindowOnClosed;
-                adWindow[i] = null;
+                if (adWindow[i] != null)
+                {
+                    adWindow[i].Closed -= AdWindowOnClosed;
+                    adWindow[i] = null;
+                }
             }
         }
 

@@ -12,9 +12,11 @@ namespace GameOfLife
         private readonly DispatcherTimer adTimer;
         private int imgNmb;     // the number of the image currently shown
         private string link;    // the URL where the currently shown ad leads to
+        private ImageBrush myBrush;
 
         public AdWindow(Window owner)
         {
+            myBrush = new ImageBrush();
             Random rnd = new Random();
             Owner = owner;
             Width = 350;
@@ -44,7 +46,8 @@ namespace GameOfLife
 
         protected override void OnClosed(EventArgs e)
         {
-            //Unsubscribe();
+            adTimer.Stop();
+            Unsubscribe();
             base.OnClosed(e);
         }
 
@@ -52,32 +55,26 @@ namespace GameOfLife
 
         private void ChangeAds(object sender, EventArgs eventArgs)
         {
-            ImageBrush myBrush = new ImageBrush();
+            //new Uri($"pack://application:,,,/Resources/Ad{imgNmb}.png", UriKind.Absolute);
 
-            switch (imgNmb)
-            {
-                case 1:
-                    myBrush.ImageSource =
-                        new BitmapImage(new Uri("ad1.jpg", UriKind.Relative));
-                    Background = myBrush;
-                    link = "http://example.com";
-                    imgNmb++;
-                    break;
-                case 2:
-                    myBrush.ImageSource =
-                        new BitmapImage(new Uri("ad2.jpg", UriKind.Relative));
-                    Background = myBrush;
-                    link = "http://example.com";
-                    imgNmb++;
-                    break;
-                case 3:
-                    myBrush.ImageSource =
-                        new BitmapImage(new Uri("ad3.jpg", UriKind.Relative));
-                    Background = myBrush;
-                    link = "http://example.com";
-                    imgNmb = 1;
-                    break;
-            }
+            // Clear the old ImageSource to allow garbage collection of the previous BitmapImage
+            // This prevents memory leaks when images are changed every 3 seconds
+            myBrush.ImageSource = null;
+
+            var uri = new Uri($"ad{imgNmb}.jpg", UriKind.Relative);
+            var newImage = new BitmapImage(uri);
+            // Freeze the image to make it thread-safe and allow better memory management
+            newImage.Freeze();
+            myBrush.ImageSource = newImage;
+
+            Background = myBrush;
+
+            link = "http://example.com";
+
+            if (imgNmb == 3)
+                imgNmb = 1;
+            else
+                imgNmb++;
         }
     }
 }

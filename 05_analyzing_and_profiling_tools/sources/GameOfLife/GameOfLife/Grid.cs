@@ -7,7 +7,7 @@ using System.Windows.Shapes;
 
 namespace GameOfLife
 {
-    class Grid
+    class Grid : IDisposable
     {
         private int SizeX;
         private int SizeY;
@@ -48,6 +48,26 @@ namespace GameOfLife
                     nextGenerationCells[i, j] = new Cell(i, j, 0, false);
                     cellsVisuals[i, j].Fill = Brushes.Gray;
                 }
+        }
+
+        private void UnsubscribeEventHandlers()
+        {
+            if (cellsVisuals == null) return;
+
+            for (int i = 0; i < SizeX; i++)
+                for (int j = 0; j < SizeY; j++)
+                {
+                    if (cellsVisuals[i, j] != null)
+                    {
+                        cellsVisuals[i, j].MouseMove -= MouseMove;
+                        cellsVisuals[i, j].MouseLeftButtonDown -= MouseMove;
+                    }
+                }
+        }
+
+        public void Dispose()
+        {
+            UnsubscribeEventHandlers();
         }
 
         void MouseMove(object sender, MouseEventArgs e)
@@ -121,7 +141,6 @@ namespace GameOfLife
             int age = 0;
 
             for (int i = 0; i < SizeX; i++)
-            {
                 for (int j = 0; j < SizeY; j++)
                 {
                     // nextGenerationCells[i, j] = CalculateNextGeneration(i,j);          // UNOPTIMIZED
@@ -129,7 +148,7 @@ namespace GameOfLife
                     nextGenerationCells[i, j].IsAlive = alive;  // OPTIMIZED
                     nextGenerationCells[i, j].Age = age;  // OPTIMIZED
                 }
-            }
+
             UpdateToNextGeneration();
         }
 
