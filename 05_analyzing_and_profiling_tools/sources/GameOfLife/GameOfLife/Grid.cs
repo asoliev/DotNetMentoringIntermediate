@@ -13,14 +13,13 @@ namespace GameOfLife
         private int SizeY;
         private Cell[,] cells;
         private Cell[,] nextGenerationCells;
-        private static Random rnd;
+        private static Random rnd = new Random();
         private Canvas drawCanvas;
         private Ellipse[,] cellsVisuals;
 
         public Grid(Canvas c)
         {
             drawCanvas = c;
-            rnd = new Random();
             SizeX = (int) (c.Width / 5);
             SizeY = (int)(c.Height / 5);
             cells = new Cell[SizeX, SizeY];
@@ -70,9 +69,10 @@ namespace GameOfLife
             UnsubscribeEventHandlers();
         }
 
-        void MouseMove(object sender, MouseEventArgs e)
+        void MouseMove(object? sender, MouseEventArgs e)
         {
             var cellVisual = sender as Ellipse;
+            if (cellVisual == null) return;
 
             int i = (int) cellVisual.Margin.Left / 5;
             int j = (int) cellVisual.Margin.Top / 5;

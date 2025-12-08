@@ -11,7 +11,7 @@ namespace GameOfLife
     {
         private readonly DispatcherTimer adTimer;
         private int imgNmb;     // the number of the image currently shown
-        private string link;    // the URL where the currently shown ad leads to
+        private string link = string.Empty;    // the URL where the currently shown ad leads to
         private ImageBrush myBrush;
 
         public AdWindow(Window owner)
@@ -38,7 +38,7 @@ namespace GameOfLife
             adTimer.Start();
         }
 
-        private void OnClick(object sender, MouseButtonEventArgs e)
+        private void OnClick(object? sender, MouseButtonEventArgs e)
         {
             System.Diagnostics.Process.Start(link);
             Close();
@@ -53,7 +53,7 @@ namespace GameOfLife
 
         public void Unsubscribe() => adTimer.Tick -= ChangeAds;
 
-        private void ChangeAds(object sender, EventArgs eventArgs)
+        private void ChangeAds(object? sender, EventArgs eventArgs)
         {
             //new Uri($"pack://application:,,,/Resources/Ad{imgNmb}.png", UriKind.Absolute);
 
