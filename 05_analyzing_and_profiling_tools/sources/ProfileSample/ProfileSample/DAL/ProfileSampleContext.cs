@@ -12,7 +12,7 @@ public class ProfileSampleContext : DbContext
     {
         modelBuilder.Entity<ImgSource>(entity =>
         {
-            entity.ToTable("ImgSource");
+            entity.ToTable("ImgSources");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.Data).IsRequired();
