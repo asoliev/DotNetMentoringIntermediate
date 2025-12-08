@@ -3,7 +3,7 @@ using DocStream.Shared;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace DocStream.ProcessingService.Consumer;
+namespace DocStream.ProcessingService;
 
 public class Consumer
 {

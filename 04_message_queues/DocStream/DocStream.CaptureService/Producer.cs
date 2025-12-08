@@ -3,7 +3,7 @@ using DocStream.Shared;
 using System.Diagnostics;
 using System.Text.Json;
 
-namespace DocStream.CaptureService.Producer;
+namespace DocStream.CaptureService;
 
 internal class Producer
 {
