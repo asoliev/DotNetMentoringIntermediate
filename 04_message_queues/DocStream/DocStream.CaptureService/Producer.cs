@@ -106,14 +106,14 @@ internal class Producer
 
     private ServiceBusMessage CreateMessageForChunk(string fileId, string? fileName, string fileHash, byte[] chunkData, int chunkNumber, int totalChunks)
     {
-        object messageObj = (
-            FileId: fileId,
-            FileName: fileName,
-            ChunkNumber: chunkNumber,
-            TotalChunks: totalChunks,
-            Data: Convert.ToBase64String(chunkData),
-            FileHash: chunkNumber == 0 ? fileHash : null // Only first chunk carries the hash
-        );
+        object messageObj = new {
+            FileId = fileId,
+            FileName = fileName,
+            ChunkNumber = chunkNumber,
+            TotalChunks = totalChunks,
+            Data = Convert.ToBase64String(chunkData),
+            FileHash = chunkNumber == 0 ? fileHash : null // Only first chunk carries the hash
+        };
 
         string messageBody = JsonSerializer.Serialize(messageObj);
         ServiceBusMessage message = new(messageBody)
