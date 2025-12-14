@@ -1,74 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProfileSample.DAL;
 using ProfileSample.Models;
 
-namespace ProfileSample.Controllers
+namespace ProfileSample.Controllers;
+
+public class HomeController(ProfileSampleContext context, IWebHostEnvironment environment) : Controller
 {
-    public class HomeController : Controller
+    public async Task<IActionResult> Index()
     {
-        public ActionResult Index()
-        {
-            var context = new ProfileSampleEntities();
-
-            var sources = context.ImgSources.Take(20).Select(x => x.Id);
-            
-            var model = new List<ImageModel>();
-
-            foreach (var id in sources)
+        var model = await context.ImgSources
+            .Take(20)
+            .Select(x => new ImageModel
             {
-                var item = context.ImgSources.Find(id);
+                Name = x.Name,
+                Data = x.Data
+            })
+            .ToListAsync();
 
-                var obj = new ImageModel()
-                {
-                    Name = item.Name,
-                    Data = item.Data
-                };
+        return View(model);
+    }
 
-                model.Add(obj);
-            } 
-
-            return View(model);
-        }
-
-        public ActionResult Convert()
+    public async Task<IActionResult> Convert()
+    {
+        var imgPath = Path.Combine(environment.WebRootPath, "Content", "Img");
+        var files = Directory.GetFiles(imgPath, "*.jpg");
+        List<ImgSource> entities = [];
+        foreach (var file in files)
         {
-            var files = Directory.GetFiles(Server.MapPath("~/Content/Img"), "*.jpg");
+            byte[] buff = await System.IO.File.ReadAllBytesAsync(file);
 
-            using (var context = new ProfileSampleEntities())
+            var entity = new ImgSource
             {
-                foreach (var file in files)
-                {
-                    using (var stream = new FileStream(file, FileMode.Open))
-                    {
-                        byte[] buff = new byte[stream.Length];
-
-                        stream.Read(buff, 0, (int) stream.Length);
-
-                        var entity = new ImgSource()
-                        {
-                            Name = Path.GetFileName(file),
-                            Data = buff,
-                        };
-
-                        context.ImgSources.Add(entity);
-                        context.SaveChanges();
-                    }
-                } 
-            }
-
-            return RedirectToAction("Index");
+                Name = Path.GetFileName(file),
+                Data = buff,
+            };
+            entities.Add(entity);
         }
+        context.ImgSources.AddRange(entities);
+        await context.SaveChangesAsync();
 
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
+        return RedirectToAction("Index");
+    }
 
-            return View();
-        }
+    public IActionResult Contact()
+    {
+        ViewBag.Message = "Your contact page.";
+        return View();
+    }
+
+    public IActionResult About()
+    {
+        ViewBag.Message = "Your application description page.";
+        return View();
+    }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View();
     }
 }
