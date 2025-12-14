@@ -25,22 +25,20 @@ public class HomeController(ProfileSampleContext context, IWebHostEnvironment en
     {
         var imgPath = Path.Combine(environment.WebRootPath, "Content", "Img");
         var files = Directory.GetFiles(imgPath, "*.jpg");
-
+        List<ImgSource> entities = [];
         foreach (var file in files)
         {
-            await using var stream = new FileStream(file, FileMode.Open);
-            byte[] buff = new byte[stream.Length];
-            await stream.ReadAsync(buff, 0, (int)stream.Length);
+            byte[] buff = await System.IO.File.ReadAllBytesAsync(file);
 
             var entity = new ImgSource
             {
                 Name = Path.GetFileName(file),
                 Data = buff,
             };
-
-            context.ImgSources.Add(entity);
-            await context.SaveChangesAsync();
+            entities.Add(entity);
         }
+        context.ImgSources.AddRange(entities);
+        await context.SaveChangesAsync();
 
         return RedirectToAction("Index");
     }
