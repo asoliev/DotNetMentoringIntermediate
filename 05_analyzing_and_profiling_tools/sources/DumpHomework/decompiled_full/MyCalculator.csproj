@@ -15,8 +15,9 @@
     <RootNamespace />
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="mainwindow.baml" />
-    <EmbeddedResource Include="mainwindow.baml" LogicalName="mainwindow.baml" />
+    <Page Include="MyCalculator\MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
