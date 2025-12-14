@@ -139,12 +139,10 @@ class Grid : IDisposable
 
     public void UpdateToNextGeneration()
     {
-        for (int i = 0; i < SizeX; i++)
-            for (int j = 0; j < SizeY; j++)
-            {
-                cells[i, j].IsAlive = nextGenerationCells[i, j].IsAlive;
-                cells[i, j].Age = nextGenerationCells[i, j].Age;
-            }
+        // Swap array references instead of copying each cell
+        Cell[,] temp = cells;
+        cells = nextGenerationCells;
+        nextGenerationCells = temp;
 
         UpdateGraphics();
     }
