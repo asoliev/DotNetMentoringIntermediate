@@ -9,23 +9,18 @@ public static class HttpClientHelper
 {
     public static HttpClient CreateClient(string userName, string password)
     {
-        var client = new HttpClient(
-            new HttpClientHandler
-            {
-                AllowAutoRedirect = true,
-                PreAuthenticate = true
-            }
-        );
+        var handler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true,
+            PreAuthenticate = true
+        };
 
-        var encoding = new ASCIIEncoding();
-        var authHeader = new AuthenticationHeaderValue(
-            "Basic",
-            Convert.ToBase64String(
-                encoding.GetBytes(
-                    $"{userName}:{password}"
-                )
-            )
-        );
+        HttpClient client = new(handler, disposeHandler: true);
+
+        string credentials = $"{userName}:{password}";
+        byte[] credentialsBytes = Encoding.ASCII.GetBytes(credentials);
+        string base64Credentials = Convert.ToBase64String(credentialsBytes);
+        AuthenticationHeaderValue authHeader = new("Basic", base64Credentials);
         client.DefaultRequestHeaders.Authorization = authHeader;
 
         return client;
