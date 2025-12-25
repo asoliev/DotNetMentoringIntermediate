@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols" Version="8.15.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
@@ -20,12 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Expressions.Task3.E3SQueryProvider\Expressions.Task3.E3SQueryProvider.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Microsoft.IdentityModel.Protocols">
-      <HintPath>C:\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.identitymodel.protocols\5.2.0\lib\netstandard1.4\Microsoft.IdentityModel.Protocols.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>
