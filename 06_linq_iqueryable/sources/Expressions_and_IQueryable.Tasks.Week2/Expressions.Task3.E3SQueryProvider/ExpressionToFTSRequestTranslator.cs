@@ -45,9 +45,9 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
                     throw new NotSupportedException($"Right operand should be constant: {node.NodeType}");
 
                 Visit(node.Left);
-                _resultStringBuilder.Append("(");
+                _resultStringBuilder.Append('(');
                 Visit(node.Right);
-                _resultStringBuilder.Append(")");
+                _resultStringBuilder.Append(')');
                 break;
 
             default:
@@ -59,7 +59,7 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
 
     protected override Expression VisitMember(MemberExpression node)
     {
-        _resultStringBuilder.Append(node.Member.Name).Append(":");
+        _resultStringBuilder.Append(node.Member.Name).Append(':');
 
         return base.VisitMember(node);
     }
