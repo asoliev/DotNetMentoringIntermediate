@@ -14,7 +14,6 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     public string Translate(Expression exp)
     {
         Visit(exp);
-
         return _resultStringBuilder.ToString();
     }
 
@@ -38,21 +37,36 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
         switch (node.NodeType)
         {
             case ExpressionType.Equal:
-                if (node.Left.NodeType != ExpressionType.MemberAccess)
-                    throw new NotSupportedException($"Left operand should be property or field: {node.NodeType}");
+                // TASK 1: Support both operand orders
+                Expression memberExpression = null;
+                Expression constantExpression = null;
 
-                if (node.Right.NodeType != ExpressionType.Constant)
-                    throw new NotSupportedException($"Right operand should be constant: {node.NodeType}");
+                // Check if left is member and right is constant
+                if (node.Left.NodeType == ExpressionType.MemberAccess && node.Right.NodeType == ExpressionType.Constant)
+                {
+                    memberExpression = node.Left;
+                    constantExpression = node.Right;
+                }
+                // Check if right is member and left is constant (reverse order)
+                else if (node.Left.NodeType == ExpressionType.Constant && node.Right.NodeType == ExpressionType.MemberAccess)
+                {
+                    memberExpression = node.Right;
+                    constantExpression = node.Left;
+                }
+                else
+                {
+                    throw new NotSupportedException($"Operands should be property/field and constant");
+                }
 
-                Visit(node.Left);
+                Visit(memberExpression);
                 _resultStringBuilder.Append('(');
-                Visit(node.Right);
+                Visit(constantExpression);
                 _resultStringBuilder.Append(')');
                 break;
 
             default:
                 throw new NotSupportedException($"Operation '{node.NodeType}' is not supported");
-        };
+        }
 
         return node;
     }
