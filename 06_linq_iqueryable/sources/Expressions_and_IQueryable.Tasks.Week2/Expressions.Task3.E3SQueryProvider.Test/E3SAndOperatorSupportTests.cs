@@ -20,8 +20,24 @@ public class E3SAndOperatorSupportTests
     #region SubTask 3: AND operator support
 
     [Fact]
-    public void TestAndQueryable()
+    public void TestAndQueryable_TranslateMethod()
     {
+        // Arrange
+        var translator = new ExpressionToFtsRequestTranslator();
+        Expression<Func<IQueryable<EmployeeEntity>, IQueryable<EmployeeEntity>>> expression
+            = query => query.Where(e => e.Workstation == "EPRUIZHW006" && e.Manager.StartsWith("John"));
+
+        // Act
+        string translated = translator.Translate(expression);
+
+        // Assert
+        Assert.Equal("Workstation:(EPRUIZHW006) AND Manager:(John*)", translated);
+    }
+
+    [Fact]
+    public void TestAndQueryable_TranslateToStatementsMethod()
+    {
+        // Arrange
         var translator = new ExpressionToFtsRequestTranslator();
         Expression<Func<IQueryable<EmployeeEntity>, IQueryable<EmployeeEntity>>> expression
             = query => query.Where(e => e.Workstation == "EPRUIZHW006" && e.Manager.StartsWith("John"));
@@ -34,13 +50,10 @@ public class E3SAndOperatorSupportTests
           ],
          */
 
-        // Test 1: Translate returns combined string with AND separator
-        string translated = translator.Translate(expression);
-        Assert.Equal("Workstation:(EPRUIZHW006) AND Manager:(John*)", translated);
+        // Act
+        var statements = translator.TranslateToStatements(expression);
 
-        // Test 2: TranslateToStatements returns list of individual statements
-        var translator2 = new ExpressionToFtsRequestTranslator();
-        var statements = translator2.TranslateToStatements(expression);
+        // Assert
         Assert.Equal(2, statements.Count);
         Assert.Equal("Workstation:(EPRUIZHW006)", statements[0]);
         Assert.Equal("Manager:(John*)", statements[1]);
