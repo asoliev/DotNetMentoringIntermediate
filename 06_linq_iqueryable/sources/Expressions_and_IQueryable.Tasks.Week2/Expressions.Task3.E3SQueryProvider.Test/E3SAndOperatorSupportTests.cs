@@ -34,8 +34,16 @@ public class E3SAndOperatorSupportTests
           ],
          */
 
-        // todo: create asserts for this test by yourself, because they will depend on your final implementation
-        throw new NotImplementedException("Please implement this test and the appropriate functionality");
+        // Test 1: Translate returns combined string with AND separator
+        string translated = translator.Translate(expression);
+        Assert.Equal("Workstation:(EPRUIZHW006) AND Manager:(John*)", translated);
+
+        // Test 2: TranslateToStatements returns list of individual statements
+        var translator2 = new ExpressionToFtsRequestTranslator();
+        var statements = translator2.TranslateToStatements(expression);
+        Assert.Equal(2, statements.Count);
+        Assert.Equal("Workstation:(EPRUIZHW006)", statements[0]);
+        Assert.Equal("Manager:(John*)", statements[1]);
     }
 
     #endregion
