@@ -17,7 +17,6 @@ namespace Expressions.Task3.E3SQueryProvider.Test.Ignored;
 /// </summary>
 public class E3SProviderTests(ITestOutputHelper testOutputHelper)
 {
-
     #region private 
 
     private static IConfigurationRoot config = new ConfigurationBuilder()

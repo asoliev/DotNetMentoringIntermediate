@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Text;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
+using System.Collections.Generic;
 
 namespace Expressions.Task3.E3SQueryProvider;
 
@@ -13,20 +13,16 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
 
     public ExpressionToFtsRequestTranslator()
     {
-        _statements = new List<string>();
+        _statements = [];
         _currentStatementBuilder = new StringBuilder();
     }
 
     public string Translate(Expression exp)
     {
         Visit(exp);
-
         // If we have multiple statements (from AND operator), join them
         if (_statements.Count > 0)
-        {
             return string.Join(" AND ", _statements);
-        }
-
         return _currentStatementBuilder.ToString();
     }
 
@@ -37,18 +33,11 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     public List<string> TranslateToStatements(Expression exp)
     {
         Visit(exp);
-
         if (_statements.Count > 0)
-        {
             return _statements;
-        }
-
         if (_currentStatementBuilder.Length > 0)
-        {
-            return new List<string> { _currentStatementBuilder.ToString() };
-        }
-
-        return new List<string>();
+            return [_currentStatementBuilder.ToString()];
+        return [];
     }
 
     #region protected methods
@@ -66,7 +55,6 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
 
         // TASK 2: Handle string methods
         if (node.Method.DeclaringType == typeof(string))
-        {
             switch (node.Method.Name)
             {
                 case "StartsWith":
@@ -101,7 +89,6 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
                     _currentStatementBuilder.Append(')');
                     return node;
             }
-        }
 
         return base.VisitMethodCall(node);
     }
@@ -128,9 +115,7 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
                     constantExpression = node.Left;
                 }
                 else
-                {
                     throw new NotSupportedException($"Operands should be property/field and constant");
-                }
 
                 Visit(memberExpression);
                 _currentStatementBuilder.Append('(');
@@ -159,10 +144,7 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
         // Only append field name when it's a parameter member access (not nested)
         if (node.Expression != null && node.Expression.NodeType == ExpressionType.Parameter)
-        {
             _currentStatementBuilder.Append(node.Member.Name).Append(':');
-        }
-
         return base.VisitMember(node);
     }
 
@@ -170,10 +152,7 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
         // Only append value if it's not a queryable constant
         if (node.Value != null && !IsQueryableConstant(node))
-        {
             _currentStatementBuilder.Append(node.Value);
-        }
-
         return node;
     }
 
@@ -181,11 +160,8 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
 
     #region private methods
 
-    private bool IsQueryableConstant(ConstantExpression node)
-    {
-        return node.Type.IsGenericType &&
+    private static bool IsQueryableConstant(ConstantExpression node) => node.Type.IsGenericType &&
                node.Type.GetGenericTypeDefinition() == typeof(System.Linq.EnumerableQuery<>);
-    }
 
     /// <summary>
     /// Extracts a single statement from an expression by visiting it with a temporary builder

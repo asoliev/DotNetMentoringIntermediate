@@ -55,20 +55,18 @@ public class FtsRequestGenerator(string baseAddress)
     private static List<Statement> ParseQueryIntoStatements(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
-        {
-            return new List<Statement> { new Statement { Query = "*" } };
-        }
+            return [new() { Query = "*" }];
 
         // Check if query contains AND operator
         if (query.Contains(" AND "))
         {
             // Split by AND and create separate statements
-            var queries = query.Split(new[] { " AND " }, StringSplitOptions.RemoveEmptyEntries);
-            return queries.Select(q => new Statement { Query = q.Trim() }).ToList();
+            var queries = query.Split([" AND "], StringSplitOptions.RemoveEmptyEntries);
+            return [.. queries.Select(q => new Statement { Query = q.Trim() })];
         }
 
         // Single statement
-        return new List<Statement> { new Statement { Query = query } };
+        return [new() { Query = query }];
     }
 
     private static Uri BindByName(string baseAddress, Dictionary<string, string> queryParams)
