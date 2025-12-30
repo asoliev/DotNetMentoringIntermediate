@@ -29,6 +29,46 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
 
             return node;
         }
+
+        // TASK 2: Handle string methods
+        if (node.Method.DeclaringType == typeof(string))
+        {
+            switch (node.Method.Name)
+            {
+                case "StartsWith":
+                    // field.StartsWith("value") => field:(value*)
+                    Visit(node.Object);
+                    _resultStringBuilder.Append('(');
+                    Visit(node.Arguments[0]);
+                    _resultStringBuilder.Append("*)");
+                    return node;
+
+                case "EndsWith":
+                    // field.EndsWith("value") => field:(*value)
+                    Visit(node.Object);
+                    _resultStringBuilder.Append("(*");
+                    Visit(node.Arguments[0]);
+                    _resultStringBuilder.Append(')');
+                    return node;
+
+                case "Contains":
+                    // field.Contains("value") => field:(*value*)
+                    Visit(node.Object);
+                    _resultStringBuilder.Append("(*");
+                    Visit(node.Arguments[0]);
+                    _resultStringBuilder.Append("*)");
+                    return node;
+
+                case "Equals":
+                    // field.Equals("value") => field:(value)
+                    Visit(node.Object);
+                    _resultStringBuilder.Append('(');
+                    Visit(node.Arguments[0]);
+                    _resultStringBuilder.Append(')');
+                    return node;
+            }
+        }
+
         return base.VisitMethodCall(node);
     }
 
@@ -73,16 +113,34 @@ public class ExpressionToFtsRequestTranslator : ExpressionVisitor
 
     protected override Expression VisitMember(MemberExpression node)
     {
-        _resultStringBuilder.Append(node.Member.Name).Append(':');
+        // Only append field name when it's a parameter member access (not nested)
+        if (node.Expression != null && node.Expression.NodeType == ExpressionType.Parameter)
+        {
+            _resultStringBuilder.Append(node.Member.Name).Append(':');
+        }
 
         return base.VisitMember(node);
     }
 
     protected override Expression VisitConstant(ConstantExpression node)
     {
-        _resultStringBuilder.Append(node.Value);
+        // Only append value if it's not a queryable constant
+        if (node.Value != null && !IsQueryableConstant(node))
+        {
+            _resultStringBuilder.Append(node.Value);
+        }
 
         return node;
+    }
+
+    #endregion
+
+    #region private methods
+
+    private bool IsQueryableConstant(ConstantExpression node)
+    {
+        return node.Type.IsGenericType &&
+               node.Type.GetGenericTypeDefinition() == typeof(System.Linq.EnumerableQuery<>);
     }
 
     #endregion
