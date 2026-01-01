@@ -8,14 +8,9 @@ namespace Expressions.Task3.E3SQueryProvider.SqlProvider;
 /// <summary>
 /// IQueryProvider implementation for SQL database queries
 /// </summary>
-public class SqlQueryProvider : IQueryProvider
+public class SqlQueryProvider(ISqlQueryExecutor executor) : IQueryProvider
 {
-    private readonly ISqlQueryExecutor _executor;
-
-    public SqlQueryProvider(ISqlQueryExecutor executor)
-    {
-        _executor = executor ?? throw new ArgumentNullException(nameof(executor));
-    }
+    private readonly ISqlQueryExecutor _executor = executor ?? throw new ArgumentNullException(nameof(executor));
 
     public IQueryable CreateQuery(Expression expression)
     {
@@ -31,17 +26,9 @@ public class SqlQueryProvider : IQueryProvider
             throw ex.InnerException;
         }
     }
+    public IQueryable<TElement> CreateQuery<TElement>(Expression expression) => new SqlQuery<TElement>(this, expression);
 
-    public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-    {
-        return new SqlQuery<TElement>(this, expression);
-    }
-
-    public object Execute(Expression expression)
-    {
-        return Execute<object>(expression);
-    }
-
+    public object Execute(Expression expression) => Execute<object>(expression);
     public TResult Execute<TResult>(Expression expression)
     {
         Type elementType = TypeHelper.GetElementType(expression.Type);

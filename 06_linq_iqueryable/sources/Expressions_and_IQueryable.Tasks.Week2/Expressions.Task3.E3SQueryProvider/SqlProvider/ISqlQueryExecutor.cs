@@ -7,8 +7,6 @@ namespace Expressions.Task3.E3SQueryProvider.SqlProvider;
 /// </summary>
 public interface ISqlQueryExecutor
 {
-    /// <summary>
-    /// Executes a SQL query and returns results
-    /// </summary>
+    /// <summary> Executes a SQL query and returns results </summary>
     object Execute(Type elementType, string sqlQuery);
 }

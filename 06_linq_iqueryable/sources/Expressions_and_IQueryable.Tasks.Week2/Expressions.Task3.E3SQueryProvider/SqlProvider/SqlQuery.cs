@@ -6,11 +6,13 @@ using System.Linq.Expressions;
 
 namespace Expressions.Task3.E3SQueryProvider.SqlProvider;
 
-/// <summary>
-/// IQueryable implementation for SQL queries
-/// </summary>
+/// <summary> IQueryable implementation for SQL queries </summary>
 public class SqlQuery<T> : IOrderedQueryable<T>
 {
+    public Expression Expression { get; }
+    public Type ElementType => typeof(T);
+    public IQueryProvider Provider { get; }
+
     public SqlQuery(SqlQueryProvider provider)
     {
         Provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -23,24 +25,9 @@ public class SqlQuery<T> : IOrderedQueryable<T>
         Expression = expression ?? throw new ArgumentNullException(nameof(expression));
 
         if (!typeof(IQueryable<T>).IsAssignableFrom(expression.Type))
-        {
             throw new ArgumentException($"Expression must be assignable to IQueryable<{typeof(T).Name}>");
-        }
     }
 
-    public Type ElementType => typeof(T);
-
-    public Expression Expression { get; }
-
-    public IQueryProvider Provider { get; }
-
-    public IEnumerator<T> GetEnumerator()
-    {
-        return Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    public IEnumerator<T> GetEnumerator() => Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

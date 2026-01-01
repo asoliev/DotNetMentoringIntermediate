@@ -35,7 +35,7 @@ public class ExpressionToSqlTranslator : ExpressionVisitor
         if (_whereClause.Length > 0)
         {
             sql.Append(" WHERE ");
-            sql.Append(_whereClause.ToString());
+            sql.Append(_whereClause);
         }
 
         return sql.ToString();
@@ -44,7 +44,6 @@ public class ExpressionToSqlTranslator : ExpressionVisitor
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         if (node.Method.DeclaringType == typeof(System.Linq.Queryable))
-        {
             switch (node.Method.Name)
             {
                 case "Where":
@@ -58,7 +57,6 @@ public class ExpressionToSqlTranslator : ExpressionVisitor
                     // For now, we'll use SELECT * (selector handling could be added)
                     return node;
             }
-        }
 
         return base.VisitMethodCall(node);
     }
@@ -98,19 +96,19 @@ public class ExpressionToSqlTranslator : ExpressionVisitor
                 break;
 
             case ExpressionType.AndAlso:
-                _whereClause.Append("(");
+                _whereClause.Append('(');
                 Visit(node.Left);
                 _whereClause.Append(" AND ");
                 Visit(node.Right);
-                _whereClause.Append(")");
+                _whereClause.Append(')');
                 break;
 
             case ExpressionType.OrElse:
-                _whereClause.Append("(");
+                _whereClause.Append('(');
                 Visit(node.Left);
                 _whereClause.Append(" OR ");
                 Visit(node.Right);
-                _whereClause.Append(")");
+                _whereClause.Append(')');
                 break;
 
             default:
@@ -132,13 +130,9 @@ public class ExpressionToSqlTranslator : ExpressionVisitor
 
         // Ensure column is on the left side
         if (IsColumnReference(right) && !IsColumnReference(left))
-        {
             _whereClause.Append($"{right} {op} {left}");
-        }
         else
-        {
             _whereClause.Append($"{left} {op} {right}");
-        }
     }
 
     protected override Expression VisitMember(MemberExpression node)
@@ -161,24 +155,15 @@ public class ExpressionToSqlTranslator : ExpressionVisitor
     protected override Expression VisitConstant(ConstantExpression node)
     {
         if (node.Value != null && !IsQueryableConstant(node))
-        {
             _operands.Push(FormatValue(node.Value));
-        }
-
         return node;
     }
 
-    private static bool IsQueryableConstant(ConstantExpression node)
-    {
-        return node.Type.IsGenericType &&
+    private static bool IsQueryableConstant(ConstantExpression node) => node.Type.IsGenericType &&
                (node.Type.GetGenericTypeDefinition() == typeof(System.Linq.EnumerableQuery<>) ||
                 node.Type.GetGenericTypeDefinition() == typeof(SqlQuery<>));
-    }
 
-    private static bool IsColumnReference(string value)
-    {
-        return value.StartsWith("[") && value.EndsWith("]");
-    }
+    private static bool IsColumnReference(string value) => value.StartsWith('[') && value.EndsWith(']');
 
     private static string FormatValue(object value)
     {

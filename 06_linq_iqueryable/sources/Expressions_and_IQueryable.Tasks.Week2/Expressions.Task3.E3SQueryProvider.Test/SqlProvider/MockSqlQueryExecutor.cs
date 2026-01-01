@@ -13,12 +13,9 @@ public class MockSqlQueryExecutor : ISqlQueryExecutor
 {
     public string LastGeneratedSql { get; private set; }
 
-    private readonly Dictionary<Type, IEnumerable> _mockData = new();
+    private readonly Dictionary<Type, IEnumerable> _mockData = [];
 
-    public void SetMockData<T>(IEnumerable<T> data)
-    {
-        _mockData[typeof(T)] = data;
-    }
+    public void SetMockData<T>(IEnumerable<T> data) => _mockData[typeof(T)] = data;
 
     public object Execute(Type elementType, string sqlQuery)
     {
@@ -26,9 +23,7 @@ public class MockSqlQueryExecutor : ISqlQueryExecutor
 
         // Return mock data if available
         if (_mockData.TryGetValue(elementType, out var data))
-        {
             return data;
-        }
 
         // Return empty collection
         var listType = typeof(List<>).MakeGenericType(elementType);

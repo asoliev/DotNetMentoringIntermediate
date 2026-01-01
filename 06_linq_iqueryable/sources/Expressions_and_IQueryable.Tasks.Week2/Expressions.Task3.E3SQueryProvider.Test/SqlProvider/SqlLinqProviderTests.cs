@@ -15,15 +15,8 @@ namespace Expressions.Task3.E3SQueryProvider.Test.SqlProvider;
 /// 4. Support for numeric and string data types
 /// 5. CustomEntitySet usage (similar to DbSet)
 /// </summary>
-public class SqlLinqProviderTests
+public class SqlLinqProviderTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public SqlLinqProviderTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Fact]
     public void TestSimpleWhere_EqualOperator_String()
     {
@@ -37,7 +30,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE [ProductType] = 'Customised Product'";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -54,7 +47,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE [UnitPrice] > 100";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -71,7 +64,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE [UnitsInStock] < 50";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -88,7 +81,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE ([UnitPrice] > 100 AND [ProductType] = 'Customised Product')";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -108,7 +101,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE (([UnitPrice] > 100 AND [ProductType] = 'Customised Product') AND [UnitsInStock] < 50)";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -125,7 +118,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE [ProductType] = 'Customised Product'";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -142,7 +135,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE [UnitPrice] >= 100";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -159,7 +152,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE [UnitsInStock] <= 20";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 
@@ -176,7 +169,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE ([UnitPrice] > 100 AND [ProductType] = 'Customised Product')";
-        _output.WriteLine($"Generated SQL: {sql}");
+        output.WriteLine($"Generated SQL: {sql}");
         Assert.Equal(expectedSql, sql);
     }
 
@@ -187,19 +180,19 @@ public class SqlLinqProviderTests
         var executor = new MockSqlQueryExecutor();
         var mockProducts = new[]
         {
-            new ProductEntity 
+            new ProductEntity
             { 
-                ProductId = 1, 
-                ProductName = "Custom Widget", 
-                UnitPrice = 150, 
+                ProductId = 1,
+                ProductName = "Custom Widget",
+                UnitPrice = 150,
                 ProductType = "Customised Product",
                 UnitsInStock = 30
             },
-            new ProductEntity 
+            new ProductEntity
             { 
-                ProductId = 2, 
-                ProductName = "Premium Gadget", 
-                UnitPrice = 200, 
+                ProductId = 2,
+                ProductName = "Premium Gadget",
+                UnitPrice = 200,
                 ProductType = "Customised Product",
                 UnitsInStock = 15
             }
@@ -214,8 +207,8 @@ public class SqlLinqProviderTests
             .ToList();
 
         // Assert
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
-        _output.WriteLine($"Results count: {results.Count}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Results count: {results.Count}");
         Assert.Equal(2, results.Count);
         Assert.All(results, p => 
         {
@@ -239,7 +232,7 @@ public class SqlLinqProviderTests
 
         // Assert
         string expectedSql = "SELECT * FROM [dbo].[Products] WHERE ([UnitPrice] > 99.99 AND [ProductName] = 'Widget')";
-        _output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
+        output.WriteLine($"Generated SQL: {executor.LastGeneratedSql}");
         Assert.Equal(expectedSql, executor.LastGeneratedSql);
     }
 }
