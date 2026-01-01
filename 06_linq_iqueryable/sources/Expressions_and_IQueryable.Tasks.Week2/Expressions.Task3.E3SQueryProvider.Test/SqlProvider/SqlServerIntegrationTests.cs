@@ -14,17 +14,11 @@ namespace Expressions.Task3.E3SQueryProvider.Test.SqlProvider;
 /// 3. Update the connection string
 /// 4. Remove the Skip attribute
 /// </summary>
-public class SqlServerIntegrationTests
+public class SqlServerIntegrationTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-    
+
     // Update this connection string to point to your SQL Server
     private const string ConnectionString = "Server=localhost;Database=TestDB;Integrated Security=true;";
-
-    public SqlServerIntegrationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact(Skip = "Requires SQL Server setup - Enable manually")]
     public void TestRealDatabaseQuery_WithAnd()
@@ -60,10 +54,10 @@ public class SqlServerIntegrationTests
             .ToList();
 
         // Assert
-        _output.WriteLine($"Found {results.Count} products");
+        output.WriteLine($"Found {results.Count} products");
         foreach (var product in results)
         {
-            _output.WriteLine($"- {product.ProductName}: ${product.UnitPrice}");
+            output.WriteLine($"- {product.ProductName}: ${product.UnitPrice}");
         }
 
         Assert.NotEmpty(results);
@@ -88,7 +82,7 @@ public class SqlServerIntegrationTests
         string sql = translator.Translate(expression, typeof(ProductEntity));
 
         // Assert
-        _output.WriteLine($"Generated SQL: {sql}");
+        output.WriteLine($"Generated SQL: {sql}");
         Assert.Contains("SELECT * FROM", sql);
         Assert.Contains("[UnitPrice] > 100", sql);
         Assert.Contains("[ProductType] = 'Customised Product'", sql);
@@ -107,7 +101,7 @@ public class SqlServerIntegrationTests
         string sql = translator.Translate(expression, typeof(ProductEntity));
 
         // Assert
-        _output.WriteLine($"Generated SQL: {sql}");
+        output.WriteLine($"Generated SQL: {sql}");
         // ProductEntity has [Table("Products", Schema = "dbo")] attribute
         string expected = "SELECT * FROM [dbo].[Products] WHERE (([UnitPrice] > 50 AND [UnitPrice] < 200) AND [UnitsInStock] < 100)";
         Assert.Equal(expected, sql);

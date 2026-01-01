@@ -1,66 +1,50 @@
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 
 namespace Expressions.Task3.E3SQueryProvider.SqlProvider;
 
 /// <summary>
-/// Example implementation of ISqlQueryExecutor for real SQL Server database
-/// This demonstrates how to connect the LINQ Provider to an actual database
-/// 
-/// NOTE: This is a reference implementation. To use it, add the System.Data.SqlClient
-/// NuGet package to your project and uncomment the code below.
+/// Implementation of ISqlQueryExecutor for SQL Server database
+/// Uses the modern Microsoft.Data.SqlClient package (recommended over obsolete System.Data.SqlClient)
 /// </summary>
-public class SqlServerQueryExecutor : ISqlQueryExecutor
+public class SqlServerQueryExecutor(string connectionString) : ISqlQueryExecutor
 {
-    private readonly string _connectionString;
-
-    public SqlServerQueryExecutor(string connectionString)
-    {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-    }
+    private readonly string _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
 
     public object Execute(Type elementType, string sqlQuery)
     {
         var resultListType = typeof(List<>).MakeGenericType(elementType);
         var results = (System.Collections.IList)Activator.CreateInstance(resultListType);
 
-        using (var connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = new(_connectionString))
         {
-            using (var command = new SqlCommand(sqlQuery, connection))
+            using SqlCommand command = new(sqlQuery, connection);
+            connection.Open();
+            using SqlDataReader reader = command.ExecuteReader();
+            var properties = elementType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            while (reader.Read())
             {
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    var properties = elementType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var instance = Activator.CreateInstance(elementType);
 
-                    while (reader.Read())
+                foreach (var property in properties)
+                    try
                     {
-                        var instance = Activator.CreateInstance(elementType);
+                        var ordinal = reader.GetOrdinal(property.Name);
+                        var value = reader.GetValue(ordinal);
 
-                        foreach (var property in properties)
-                        {
-                            try
-                            {
-                                var ordinal = reader.GetOrdinal(property.Name);
-                                var value = reader.GetValue(ordinal);
-
-                                if (value != DBNull.Value && property.CanWrite)
-                                {
-                                    property.SetValue(instance, Convert.ChangeType(value, property.PropertyType));
-                                }
-                            }
-                            catch
-                            {
-                                // Column not found or conversion failed - skip
-                            }
-                        }
-
-                        results.Add(instance);
+                        if (value != DBNull.Value && property.CanWrite)
+                            property.SetValue(instance, Convert.ChangeType(value, property.PropertyType));
                     }
-                }
+                    catch
+                    {
+                        // Column not found or conversion failed - skip
+                    }
+
+                results.Add(instance);
             }
         }
 
@@ -97,9 +81,7 @@ public static class SqlServerQueryExecutorExample
 
         // 5. Process results
         foreach (var product in expensiveProducts)
-        {
             Console.WriteLine($"{product.ProductName}: ${product.UnitPrice}");
-        }
     }
 
     /// <summary>
@@ -177,9 +159,7 @@ public static class SqlServerQueryExecutorExample
     }
 }
 
-/// <summary>
-/// Example Product entity for demonstrations
-/// </summary>
+/// <summary> Example Product entity for demonstrations </summary>
 public class ProductEntity
 {
     public int ProductId { get; set; }
