@@ -3,26 +3,26 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 
-namespace Expressions.Task3.E3SQueryProvider.Helpers
+namespace Expressions.Task3.E3SQueryProvider.Helpers;
+
+public static class HttpClientHelper
 {
-    public static class HttpClientHelper
+    public static HttpClient CreateClient(string userName, string password)
     {
-        public static HttpClient CreateClient(string userName, string password)
+        var handler = new HttpClientHandler
         {
-            var client = new HttpClient(
-                new HttpClientHandler
-                {
-                    AllowAutoRedirect = true,
-                    PreAuthenticate = true
-                });
+            AllowAutoRedirect = true,
+            PreAuthenticate = true
+        };
 
-            var encoding = new ASCIIEncoding();
-            var authHeader = new AuthenticationHeaderValue(
-                "Basic",
-                Convert.ToBase64String(encoding.GetBytes($"{userName}:{password}")));
-            client.DefaultRequestHeaders.Authorization = authHeader;
+        HttpClient client = new(handler, disposeHandler: true);
 
-            return client;
-        }
+        string credentials = $"{userName}:{password}";
+        byte[] credentialsBytes = Encoding.ASCII.GetBytes(credentials);
+        string base64Credentials = Convert.ToBase64String(credentialsBytes);
+        AuthenticationHeaderValue authHeader = new("Basic", base64Credentials);
+        client.DefaultRequestHeaders.Authorization = authHeader;
+
+        return client;
     }
 }
