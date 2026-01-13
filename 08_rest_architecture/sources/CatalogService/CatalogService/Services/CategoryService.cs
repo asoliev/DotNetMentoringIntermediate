@@ -1,67 +1,37 @@
+using CatalogService.Data;
 using CatalogService.Models;
 
 namespace CatalogService.Services;
 
-public class CategoryService : ICategoryService
+public class CategoryService(InMemoryDataStore dataStore) : ICategoryService
 {
-    private readonly List<Category> _categories = [];
-    private int _nextCategoryId = 1;
-    private readonly Lock _lock = new();
-
     public Task<IEnumerable<Category>> GetCategoriesAsync()
     {
-        lock (_lock)
-        {
-            return Task.FromResult<IEnumerable<Category>>(_categories.ToList());
-        }
+        var categories = dataStore.GetAllCategories();
+        return Task.FromResult(categories);
     }
 
     public Task<Category?> GetCategoryByIdAsync(int id)
     {
-        lock (_lock)
-        {
-            return Task.FromResult(_categories.FirstOrDefault(c => c.Id == id));
-        }
+        var category = dataStore.GetCategoryById(id);
+        return Task.FromResult(category);
     }
 
     public Task<Category> CreateCategoryAsync(Category category)
     {
-        lock (_lock)
-        {
-            category.Id = _nextCategoryId++;
-            _categories.Add(category);
-            return Task.FromResult(category);
-        }
+        var created = dataStore.AddCategory(category);
+        return Task.FromResult(created);
     }
 
     public Task<Category?> UpdateCategoryAsync(int id, Category category)
     {
-        lock (_lock)
-        {
-            var existingCategory = _categories.FirstOrDefault(c => c.Id == id);
-            if (existingCategory == null)
-            {
-                return Task.FromResult<Category?>(null);
-            }
-
-            existingCategory.Name = category.Name;
-            existingCategory.Description = category.Description;
-            return Task.FromResult<Category?>(existingCategory);
-        }
+        var updated = dataStore.UpdateCategory(id, category);
+        return Task.FromResult(updated);
     }
 
     public Task<bool> DeleteCategoryAsync(int id)
     {
-        lock (_lock)
-        {
-            var category = _categories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
-            {
-                return Task.FromResult(false);
-            }
-
-            _categories.Remove(category);
-            return Task.FromResult(true);
-        }
+        var deleted = dataStore.DeleteCategory(id);
+        return Task.FromResult(deleted);
     }
 }

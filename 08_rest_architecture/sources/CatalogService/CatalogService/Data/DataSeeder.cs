@@ -1,5 +1,4 @@
 using CatalogService.Models;
-using CatalogService.Services;
 using System.Text.Json;
 
 namespace CatalogService.Data;
@@ -9,7 +8,10 @@ public static class DataSeeder
 	private record CategoryDto(string Name, string Description);
 	private record ItemDto(string Name, string Description, decimal Price);
 
-	public static async Task SeedDataAsync(ICategoryService categoryService, IItemService itemService)
+	/// <summary>
+	/// Initialize the data store with seed data from JSON files
+	/// </summary>
+	public static async Task InitializeAsync(InMemoryDataStore dataStore)
 	{
 		var categoriesJson = await File.ReadAllTextAsync("Data/SeedData/categories.json");
 		var itemsJson = await File.ReadAllTextAsync("Data/SeedData/items.json");
@@ -22,7 +24,7 @@ public static class DataSeeder
 
 		foreach (var categoryDto in categories)
 		{
-			var category = await categoryService.CreateCategoryAsync(new Category
+			var category = dataStore.AddCategory(new Category
 			{
 				Name = categoryDto.Name,
 				Description = categoryDto.Description
@@ -37,7 +39,7 @@ public static class DataSeeder
 			{
 				foreach (var itemDto in items)
 				{
-					await itemService.CreateItemAsync(new Item
+					dataStore.AddItem(new Item
 					{
 						Name = itemDto.Name,
 						Description = itemDto.Description,

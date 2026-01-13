@@ -1,3 +1,4 @@
+using CatalogService.Data;
 using CatalogService.Services;
 using System.Reflection;
 
@@ -18,7 +19,15 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Register services for dependency injection
+// Initialize and register the in-memory data store as Singleton (simulates external DB)
+var dataStore = new InMemoryDataStore();
+if (builder.Environment.IsDevelopment())
+{
+    await DataSeeder.InitializeAsync(dataStore);
+}
+builder.Services.AddSingleton(dataStore);
+
+// Register services as Scoped (standard pattern for services using external data stores)
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 
