@@ -408,3 +408,11 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# JetBrains Rider / IntelliJ IDEA (additional entries)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
