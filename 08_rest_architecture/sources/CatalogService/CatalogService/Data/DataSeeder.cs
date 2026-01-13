@@ -34,9 +34,14 @@ public static class DataSeeder
     /// Initialize category data store from JSON file
     /// </summary>
     /// <returns>Dictionary mapping category names to their entities</returns>
-    private static async Task<Dictionary<string, Category>> InitializeCategoriesAsync(CategoryDataStore categoryStore)
+    private static async Task<Dictionary<string, Category>> InitializeCategoriesAsync(
+        CategoryDataStore categoryStore, 
+        ILogger? logger = null)
     {
         var categories = await LoadCategoryDataAsync();
+
+        if (logger?.IsEnabled(LogLevel.Information) == true)
+            logger.LogInformation("Loading {Count} categories", categories.Count);
 
         var categoryMap = new Dictionary<string, Category>();
 
@@ -48,7 +53,13 @@ public static class DataSeeder
                 Description = categoryDto.Description
             });
             categoryMap[categoryDto.Name] = category;
+
+            if (logger?.IsEnabled(LogLevel.Debug) == true)
+                logger.LogDebug("Loaded category: {Name}", category.Name);
         }
+
+        if (logger?.IsEnabled(LogLevel.Information) == true)
+            logger.LogInformation("Successfully loaded {Count} categories", categoryMap.Count);
 
         return categoryMap;
     }
