@@ -10,13 +10,9 @@ public class ItemService(IItemRepository itemRepository, ICategoryRepository cat
         IEnumerable<Item> items;
         
         if (categoryId.HasValue)
-        {
             items = await itemRepository.GetByCategoryIdAsync(categoryId.Value);
-        }
         else
-        {
             items = await itemRepository.GetAllAsync();
-        }
 
         var totalCount = items.Count();
         var pagedItems = items
@@ -73,21 +69,11 @@ public class ItemService(IItemRepository itemRepository, ICategoryRepository cat
             throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
 
         var updated = await itemRepository.UpdateAsync(id, item);
-        if (updated != null)
-        {
-            updated.Category = category;
-        }
+        updated?.Category = category;
         
         return updated;
     }
 
-    public Task<bool> DeleteItemAsync(int id)
-    {
-        return itemRepository.DeleteAsync(id);
-    }
-
-    public Task<int> DeleteItemsByCategoryIdAsync(int categoryId)
-    {
-        return itemRepository.DeleteByCategoryIdAsync(categoryId);
-    }
+    public Task<bool> DeleteItemAsync(int id) => itemRepository.DeleteAsync(id);
+    public Task<int> DeleteItemsByCategoryIdAsync(int categoryId) => itemRepository.DeleteByCategoryIdAsync(categoryId);
 }

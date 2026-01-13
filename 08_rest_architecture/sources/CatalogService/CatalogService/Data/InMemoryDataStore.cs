@@ -14,10 +14,7 @@ public class InMemoryDataStore
     private int _nextCategoryId = 1;
     private int _nextItemId = 1;
 
-    public IEnumerable<Category> GetAllCategories()
-    {
-        return _categories.Values.ToList();
-    }
+    public IEnumerable<Category> GetAllCategories() => [.. _categories.Values];
 
     public Category? GetCategoryById(int id)
     {
@@ -42,15 +39,9 @@ public class InMemoryDataStore
         return category;
     }
 
-    public bool DeleteCategory(int id)
-    {
-        return _categories.TryRemove(id, out _);
-    }
+    public bool DeleteCategory(int id) => _categories.TryRemove(id, out _);
 
-    public IEnumerable<Item> GetAllItems()
-    {
-        return _items.Values.ToList();
-    }
+    public IEnumerable<Item> GetAllItems() => [.. _items.Values];
 
     public Item? GetItemById(int id)
     {
@@ -75,10 +66,7 @@ public class InMemoryDataStore
         return item;
     }
 
-    public bool DeleteItem(int id)
-    {
-        return _items.TryRemove(id, out _);
-    }
+    public bool DeleteItem(int id) => _items.TryRemove(id, out _);
 
     public int DeleteItemsByCategoryId(int categoryId)
     {
@@ -86,10 +74,8 @@ public class InMemoryDataStore
         var count = 0;
 
         foreach (var item in itemsToDelete)
-        {
             if (_items.TryRemove(item.Id, out _))
                 count++;
-        }
 
         return count;
     }
