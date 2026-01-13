@@ -4,9 +4,9 @@ namespace CatalogService.Services;
 
 public class CategoryService : ICategoryService
 {
-    private readonly List<Category> _categories = new();
+    private readonly List<Category> _categories = [];
     private int _nextCategoryId = 1;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public Task<IEnumerable<Category>> GetCategoriesAsync()
     {

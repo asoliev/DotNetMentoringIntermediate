@@ -2,17 +2,11 @@ using CatalogService.Models;
 
 namespace CatalogService.Services;
 
-public class ItemService : IItemService
+public class ItemService(ICategoryService categoryService) : IItemService
 {
-    private readonly List<Item> _items = new();
-    private readonly ICategoryService _categoryService;
+    private readonly List<Item> _items = [];
     private int _nextItemId = 1;
-    private readonly object _lock = new();
-
-    public ItemService(ICategoryService categoryService)
-    {
-        _categoryService = categoryService;
-    }
+    private readonly Lock _lock = new();
 
     public Task<PagedResult<Item>> GetItemsAsync(int? categoryId = null, int pageNumber = 1, int pageSize = 10)
     {
@@ -34,7 +28,7 @@ public class ItemService : IItemService
             // Load category for each item
             foreach (var item in items)
             {
-                var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+                var category = categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
                 item.Category = category;
             }
 
@@ -57,7 +51,7 @@ public class ItemService : IItemService
             var item = _items.FirstOrDefault(i => i.Id == id);
             if (item != null)
             {
-                var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+                var category = categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
                 item.Category = category;
             }
             return Task.FromResult(item);
@@ -69,11 +63,9 @@ public class ItemService : IItemService
         lock (_lock)
         {
             // Validate category exists
-            var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+            var category = categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
             if (category == null)
-            {
                 throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
-            }
 
             item.Id = _nextItemId++;
             _items.Add(item);
@@ -88,16 +80,12 @@ public class ItemService : IItemService
         {
             var existingItem = _items.FirstOrDefault(i => i.Id == id);
             if (existingItem == null)
-            {
                 return Task.FromResult<Item?>(null);
-            }
 
             // Validate category exists
-            var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+            var category = categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
             if (category == null)
-            {
                 throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
-            }
 
             existingItem.Name = item.Name;
             existingItem.Description = item.Description;
@@ -115,9 +103,7 @@ public class ItemService : IItemService
         {
             var item = _items.FirstOrDefault(i => i.Id == id);
             if (item == null)
-            {
                 return Task.FromResult(false);
-            }
 
             _items.Remove(item);
             return Task.FromResult(true);
@@ -132,9 +118,7 @@ public class ItemService : IItemService
             var count = itemsToDelete.Count;
             
             foreach (var item in itemsToDelete)
-            {
                 _items.Remove(item);
-            }
             
             return Task.FromResult(count);
         }
