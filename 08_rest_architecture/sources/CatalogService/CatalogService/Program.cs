@@ -15,18 +15,24 @@ builder.Services.AddSwaggerGen(c =>
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
+    {
         c.IncludeXmlComments(xmlPath);
+    }
 });
 
-// Initialize and register the in-memory data store as Singleton (simulates external DB)
-var dataStore = new InMemoryDataStore();
+// Initialize and register data stores as Singletons (simulate DB tables)
+var categoryStore = new CategoryDataStore();
+var itemStore = new ItemDataStore();
+
 if (builder.Environment.IsDevelopment())
 {
-    await DataSeeder.InitializeAsync(dataStore);
+    await DataSeeder.InitializeAsync(categoryStore, itemStore);
 }
-builder.Services.AddSingleton(dataStore);
 
-// Register repositories as Scoped (abstraction over data access)
+builder.Services.AddSingleton(categoryStore);
+builder.Services.AddSingleton(itemStore);
+
+// Register repositories as Scoped (data access layer)
 builder.Services.AddScoped<ICategoryRepository, InMemoryCategoryRepository>();
 builder.Services.AddScoped<IItemRepository, InMemoryItemRepository>();
 
