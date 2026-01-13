@@ -80,14 +80,11 @@ public class CategoriesController(ICategoryService categoryService, ILogger<Cate
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteCategory(int id, [FromServices] IItemService itemService)
+    public async Task<IActionResult> DeleteCategory(int id)
     {
         var deleted = await categoryService.DeleteCategoryAsync(id);
         if (!deleted)
             return NotFound();
-
-        // Cascade delete: remove all items in this category
-        await itemService.DeleteItemsByCategoryIdAsync(id);
 
         return NoContent();
     }
