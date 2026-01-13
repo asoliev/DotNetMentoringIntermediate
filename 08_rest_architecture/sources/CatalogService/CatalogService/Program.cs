@@ -1,4 +1,5 @@
 using CatalogService.Data;
+using CatalogService.Repositories;
 using CatalogService.Services;
 using System.Reflection;
 
@@ -27,7 +28,11 @@ if (builder.Environment.IsDevelopment())
 }
 builder.Services.AddSingleton(dataStore);
 
-// Register services as Scoped (standard pattern for services using external data stores)
+// Register repositories as Scoped (abstraction over data access)
+builder.Services.AddScoped<ICategoryRepository, InMemoryCategoryRepository>();
+builder.Services.AddScoped<IItemRepository, InMemoryItemRepository>();
+
+// Register services as Scoped (business logic layer)
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 
