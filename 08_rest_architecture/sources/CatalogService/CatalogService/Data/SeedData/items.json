@@ -1,0 +1,189 @@
+{
+  "Electronics": [
+    {
+      "name": "Laptop Pro 15",
+      "description": "High-performance laptop with 16GB RAM and 512GB SSD",
+      "price": 1299.99
+    },
+    {
+      "name": "Wireless Mouse",
+      "description": "Ergonomic wireless mouse with USB receiver",
+      "price": 29.99
+    },
+    {
+      "name": "Smartphone X",
+      "description": "Latest smartphone with 5G connectivity",
+      "price": 899.99
+    },
+    {
+      "name": "Bluetooth Headphones",
+      "description": "Noise-cancelling over-ear headphones",
+      "price": 149.99
+    },
+    {
+      "name": "USB-C Hub",
+      "description": "7-in-1 USB-C hub with HDMI and card reader",
+      "price": 49.99
+    },
+    {
+      "name": "4K Monitor",
+      "description": "27-inch 4K UHD monitor with HDR support",
+      "price": 399.99
+    },
+    {
+      "name": "Mechanical Keyboard",
+      "description": "RGB backlit mechanical keyboard with blue switches",
+      "price": 129.99
+    }
+  ],
+  "Books": [
+    {
+      "name": "Clean Code",
+      "description": "A Handbook of Agile Software Craftsmanship by Robert C. Martin",
+      "price": 42.99
+    },
+    {
+      "name": "Design Patterns",
+      "description": "Elements of Reusable Object-Oriented Software",
+      "price": 54.99
+    },
+    {
+      "name": "The Pragmatic Programmer",
+      "description": "Your Journey to Mastery, 20th Anniversary Edition",
+      "price": 39.99
+    },
+    {
+      "name": "Domain-Driven Design",
+      "description": "Tackling Complexity in the Heart of Software",
+      "price": 49.99
+    },
+    {
+      "name": "Refactoring",
+      "description": "Improving the Design of Existing Code",
+      "price": 44.99
+    },
+    {
+      "name": "Code Complete",
+      "description": "A Practical Handbook of Software Construction",
+      "price": 52.99
+    }
+  ],
+  "Clothing": [
+    {
+      "name": "Cotton T-Shirt",
+      "description": "Comfortable 100% cotton t-shirt, available in multiple colors",
+      "price": 19.99
+    },
+    {
+      "name": "Denim Jeans",
+      "description": "Classic fit denim jeans",
+      "price": 59.99
+    },
+    {
+      "name": "Winter Jacket",
+      "description": "Warm insulated jacket for cold weather",
+      "price": 129.99
+    },
+    {
+      "name": "Running Shoes",
+      "description": "Lightweight running shoes with cushioned sole",
+      "price": 89.99
+    },
+    {
+      "name": "Hoodie",
+      "description": "Pullover hoodie with kangaroo pocket",
+      "price": 44.99
+    },
+    {
+      "name": "Baseball Cap",
+      "description": "Adjustable baseball cap with embroidered logo",
+      "price": 24.99
+    }
+  ],
+  "Home & Garden": [
+    {
+      "name": "LED Desk Lamp",
+      "description": "Adjustable LED lamp with touch controls",
+      "price": 34.99
+    },
+    {
+      "name": "Garden Tool Set",
+      "description": "Complete 10-piece garden tool set with carrying bag",
+      "price": 79.99
+    },
+    {
+      "name": "Throw Pillow Set",
+      "description": "Set of 4 decorative throw pillows",
+      "price": 44.99
+    },
+    {
+      "name": "Coffee Maker",
+      "description": "Programmable coffee maker with thermal carafe",
+      "price": 69.99
+    },
+    {
+      "name": "Indoor Plant Pot",
+      "description": "Ceramic plant pot with drainage tray",
+      "price": 19.99
+    },
+    {
+      "name": "Vacuum Cleaner",
+      "description": "Cordless stick vacuum with multiple attachments",
+      "price": 199.99
+    }
+  ],
+  "Sports & Outdoors": [
+    {
+      "name": "Yoga Mat",
+      "description": "Non-slip yoga mat with carrying strap",
+      "price": 24.99
+    },
+    {
+      "name": "Camping Tent",
+      "description": "4-person waterproof camping tent",
+      "price": 159.99
+    },
+    {
+      "name": "Basketball",
+      "description": "Official size basketball",
+      "price": 29.99
+    },
+    {
+      "name": "Dumbbell Set",
+      "description": "Adjustable dumbbell set 5-50 lbs",
+      "price": 299.99
+    },
+    {
+      "name": "Hiking Backpack",
+      "description": "40L hiking backpack with rain cover",
+      "price": 89.99
+    }
+  ],
+  "Toys & Games": [
+    {
+      "name": "Building Blocks Set",
+      "description": "500-piece creative building blocks",
+      "price": 39.99
+    },
+    {
+      "name": "Board Game Collection",
+      "description": "Classic board game with family-friendly rules",
+      "price": 34.99
+    },
+    {
+      "name": "RC Car",
+      "description": "Remote control racing car with rechargeable battery",
+      "price": 79.99
+    },
+    {
+      "name": "Puzzle Set",
+      "description": "1000-piece jigsaw puzzle",
+      "price": 19.99
+    },
+    {
+      "name": "Action Figure",
+      "description": "Collectible action figure with accessories",
+      "price": 24.99
+    }
+  ]
+}
