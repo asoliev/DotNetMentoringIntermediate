@@ -2,73 +2,16 @@ using CatalogService.Models;
 
 namespace CatalogService.Services;
 
-public class CatalogService : ICatalogService
+public class ItemService : IItemService
 {
-    private readonly List<Category> _categories = new();
     private readonly List<Item> _items = new();
-    private int _nextCategoryId = 1;
+    private readonly ICategoryService _categoryService;
     private int _nextItemId = 1;
     private readonly object _lock = new();
 
-    public Task<IEnumerable<Category>> GetCategoriesAsync()
+    public ItemService(ICategoryService categoryService)
     {
-        lock (_lock)
-        {
-            return Task.FromResult<IEnumerable<Category>>(_categories.ToList());
-        }
-    }
-
-    public Task<Category?> GetCategoryByIdAsync(int id)
-    {
-        lock (_lock)
-        {
-            return Task.FromResult(_categories.FirstOrDefault(c => c.Id == id));
-        }
-    }
-
-    public Task<Category> CreateCategoryAsync(Category category)
-    {
-        lock (_lock)
-        {
-            category.Id = _nextCategoryId++;
-            _categories.Add(category);
-            return Task.FromResult(category);
-        }
-    }
-
-    public Task<Category?> UpdateCategoryAsync(int id, Category category)
-    {
-        lock (_lock)
-        {
-            var existingCategory = _categories.FirstOrDefault(c => c.Id == id);
-            if (existingCategory == null)
-            {
-                return Task.FromResult<Category?>(null);
-            }
-
-            existingCategory.Name = category.Name;
-            existingCategory.Description = category.Description;
-            return Task.FromResult<Category?>(existingCategory);
-        }
-    }
-
-    public Task<bool> DeleteCategoryAsync(int id)
-    {
-        lock (_lock)
-        {
-            var category = _categories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
-            {
-                return Task.FromResult(false);
-            }
-
-            // Delete all related items
-            _items.RemoveAll(i => i.CategoryId == id);
-            
-            // Delete the category
-            _categories.Remove(category);
-            return Task.FromResult(true);
-        }
+        _categoryService = categoryService;
     }
 
     public Task<PagedResult<Item>> GetItemsAsync(int? categoryId = null, int pageNumber = 1, int pageSize = 10)
@@ -91,7 +34,8 @@ public class CatalogService : ICatalogService
             // Load category for each item
             foreach (var item in items)
             {
-                item.Category = _categories.FirstOrDefault(c => c.Id == item.CategoryId);
+                var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+                item.Category = category;
             }
 
             var result = new PagedResult<Item>
@@ -113,7 +57,8 @@ public class CatalogService : ICatalogService
             var item = _items.FirstOrDefault(i => i.Id == id);
             if (item != null)
             {
-                item.Category = _categories.FirstOrDefault(c => c.Id == item.CategoryId);
+                var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+                item.Category = category;
             }
             return Task.FromResult(item);
         }
@@ -124,14 +69,15 @@ public class CatalogService : ICatalogService
         lock (_lock)
         {
             // Validate category exists
-            if (!_categories.Any(c => c.Id == item.CategoryId))
+            var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+            if (category == null)
             {
                 throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
             }
 
             item.Id = _nextItemId++;
             _items.Add(item);
-            item.Category = _categories.FirstOrDefault(c => c.Id == item.CategoryId);
+            item.Category = category;
             return Task.FromResult(item);
         }
     }
@@ -147,7 +93,8 @@ public class CatalogService : ICatalogService
             }
 
             // Validate category exists
-            if (!_categories.Any(c => c.Id == item.CategoryId))
+            var category = _categoryService.GetCategoryByIdAsync(item.CategoryId).Result;
+            if (category == null)
             {
                 throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
             }
@@ -156,7 +103,7 @@ public class CatalogService : ICatalogService
             existingItem.Description = item.Description;
             existingItem.Price = item.Price;
             existingItem.CategoryId = item.CategoryId;
-            existingItem.Category = _categories.FirstOrDefault(c => c.Id == item.CategoryId);
+            existingItem.Category = category;
             
             return Task.FromResult<Item?>(existingItem);
         }
@@ -174,6 +121,22 @@ public class CatalogService : ICatalogService
 
             _items.Remove(item);
             return Task.FromResult(true);
+        }
+    }
+
+    public Task<int> DeleteItemsByCategoryIdAsync(int categoryId)
+    {
+        lock (_lock)
+        {
+            var itemsToDelete = _items.Where(i => i.CategoryId == categoryId).ToList();
+            var count = itemsToDelete.Count;
+            
+            foreach (var item in itemsToDelete)
+            {
+                _items.Remove(item);
+            }
+            
+            return Task.FromResult(count);
         }
     }
 }

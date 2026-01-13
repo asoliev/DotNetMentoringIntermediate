@@ -9,12 +9,12 @@ namespace CatalogService.Controllers;
 [Route("api/categories")]
 public class CategoriesController : ControllerBase
 {
-    private readonly ICatalogService _catalogService;
+    private readonly ICategoryService _categoryService;
     private readonly ILogger<CategoriesController> _logger;
 
-    public CategoriesController(ICatalogService catalogService, ILogger<CategoriesController> logger)
+    public CategoriesController(ICategoryService categoryService, ILogger<CategoriesController> logger)
     {
-        _catalogService = catalogService;
+        _categoryService = categoryService;
         _logger = logger;
     }
 
@@ -25,7 +25,7 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<Category>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
     {
-        var categories = await _catalogService.GetCategoriesAsync();
+        var categories = await _categoryService.GetCategoriesAsync();
         return Ok(categories);
     }
 
@@ -37,7 +37,7 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Category>> GetCategory(int id)
     {
-        var category = await _catalogService.GetCategoryByIdAsync(id);
+        var category = await _categoryService.GetCategoryByIdAsync(id);
         if (category == null)
         {
             return NotFound();
@@ -64,7 +64,7 @@ public class CategoriesController : ControllerBase
             Description = request.Description
         };
 
-        var createdCategory = await _catalogService.CreateCategoryAsync(category);
+        var createdCategory = await _categoryService.CreateCategoryAsync(category);
         return CreatedAtAction(nameof(GetCategory), new { id = createdCategory.Id }, createdCategory);
     }
 
@@ -89,7 +89,7 @@ public class CategoriesController : ControllerBase
             Description = request.Description
         };
 
-        var updatedCategory = await _catalogService.UpdateCategoryAsync(id, category);
+        var updatedCategory = await _categoryService.UpdateCategoryAsync(id, category);
         if (updatedCategory == null)
         {
             return NotFound();
@@ -104,13 +104,16 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteCategory(int id)
+    public async Task<IActionResult> DeleteCategory(int id, [FromServices] IItemService itemService)
     {
-        var deleted = await _catalogService.DeleteCategoryAsync(id);
+        var deleted = await _categoryService.DeleteCategoryAsync(id);
         if (!deleted)
         {
             return NotFound();
         }
+
+        // Cascade delete: remove all items in this category
+        await itemService.DeleteItemsByCategoryIdAsync(id);
 
         return NoContent();
     }

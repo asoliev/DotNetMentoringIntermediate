@@ -7,8 +7,9 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Register catalog service for dependency injection
-builder.Services.AddScoped<ICatalogService, CatalogService.Services.CatalogService>();
+// Register services for dependency injection
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IItemService, ItemService>();
 
 var app = builder.Build();
 
