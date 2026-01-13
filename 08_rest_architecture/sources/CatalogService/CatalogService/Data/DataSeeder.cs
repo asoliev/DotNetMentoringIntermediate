@@ -5,6 +5,8 @@ namespace CatalogService.Data;
 
 public static class DataSeeder
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private record CategoryDto(string Name, string Description);
     private record ItemDto(string Name, string Description, decimal Price);
 
@@ -21,13 +23,13 @@ public static class DataSeeder
     private static async Task<List<CategoryDto>> LoadCategoryDataAsync()
     {
         var json = await File.ReadAllTextAsync("Data/SeedData/categories.json");
-        return JsonSerializer.Deserialize<List<CategoryDto>>(json) ?? [];
+        return JsonSerializer.Deserialize<List<CategoryDto>>(json, _jsonOptions) ?? [];
     }
 
     private static async Task<Dictionary<string, List<ItemDto>>> LoadItemDataAsync()
     {
         var json = await File.ReadAllTextAsync("Data/SeedData/items.json");
-        return JsonSerializer.Deserialize<Dictionary<string, List<ItemDto>>>(json) ?? [];
+        return JsonSerializer.Deserialize<Dictionary<string, List<ItemDto>>>(json, _jsonOptions) ?? [];
     }
 
     /// <summary>
