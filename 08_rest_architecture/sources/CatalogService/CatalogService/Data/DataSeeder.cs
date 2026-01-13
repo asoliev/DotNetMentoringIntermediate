@@ -17,14 +17,26 @@ public static class DataSeeder
         await InitializeItemsAsync(itemStore, categoryMap);
     }
 
+    // Extract JSON loading logic
+    private static async Task<List<CategoryDto>> LoadCategoryDataAsync()
+    {
+        var json = await File.ReadAllTextAsync("Data/SeedData/categories.json");
+        return JsonSerializer.Deserialize<List<CategoryDto>>(json) ?? [];
+    }
+
+    private static async Task<Dictionary<string, List<ItemDto>>> LoadItemDataAsync()
+    {
+        var json = await File.ReadAllTextAsync("Data/SeedData/items.json");
+        return JsonSerializer.Deserialize<Dictionary<string, List<ItemDto>>>(json) ?? [];
+    }
+
     /// <summary>
     /// Initialize category data store from JSON file
     /// </summary>
     /// <returns>Dictionary mapping category names to their entities</returns>
     private static async Task<Dictionary<string, Category>> InitializeCategoriesAsync(CategoryDataStore categoryStore)
     {
-        var categoriesJson = await File.ReadAllTextAsync("Data/SeedData/categories.json");
-        var categories = JsonSerializer.Deserialize<List<CategoryDto>>(categoriesJson) ?? [];
+        var categories = await LoadCategoryDataAsync();
 
         var categoryMap = new Dictionary<string, Category>();
 
@@ -48,8 +60,7 @@ public static class DataSeeder
     /// <param name="categoryMap">Dictionary of category names to entities for FK resolution</param>
     private static async Task InitializeItemsAsync(ItemDataStore itemStore, Dictionary<string, Category> categoryMap)
     {
-        var itemsJson = await File.ReadAllTextAsync("Data/SeedData/items.json");
-        var itemsByCategory = JsonSerializer.Deserialize<Dictionary<string, List<ItemDto>>>(itemsJson) ?? [];
+        var itemsByCategory = await LoadItemDataAsync();
 
         foreach (var (categoryName, items) in itemsByCategory)
         {
