@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -53,7 +53,14 @@ internal static class Program
         finally
         {
             Listener.Stop();
-            await BroadcastAsync($"SERVER_SHUTDOWN:{DateTime.UtcNow:o}", default).ConfigureAwait(false);
+            try
+            {
+                await BroadcastAsync($"SERVER_SHUTDOWN:{DateTime.UtcNow:o}", default).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Ignore exceptions during shutdown broadcast to ensure cleanup always runs
+            }
 
             foreach (var client in Clients.Values)
             {

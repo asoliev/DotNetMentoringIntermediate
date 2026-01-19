@@ -1,7 +1,8 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace ChatServer.Task1;
 
@@ -81,6 +82,13 @@ internal static class Program
 
     private static void RemoveClient(ClientHandler client, string reason)
     {
+        // Use Interlocked.CompareExchange to ensure only one thread can initiate removal
+        if (Interlocked.CompareExchange(ref client._isRemoved, 1, 0) != 0)
+        {
+            // Already being removed by another thread, skip duplicate removal
+            return;
+        }
+
         lock (SyncRoot)
         {
             Clients.Remove(client);
@@ -127,6 +135,7 @@ internal sealed class ClientHandler : IDisposable
     private StreamReader? _reader;
     private StreamWriter? _writer;
     private Thread? _thread;
+    internal int _isRemoved = 0; // 0 = not removed, 1 = removed (for Interlocked.CompareExchange)
 
     public string ClientName { get; private set; } = string.Empty;
 
