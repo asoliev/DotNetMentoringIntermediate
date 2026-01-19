@@ -3,15 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-# macOS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
 # User-specific files
 *.rsuser
 *.suo
@@ -408,11 +399,3 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-
-# JetBrains Rider / IntelliJ IDEA (additional entries)
-.idea/
-*.iml
-*.iws
-*.ipr
-out/
-.idea_modules/
