@@ -33,12 +33,18 @@ public class ItemDataStore
 
     public Item? Update(int id, Item item)
     {
-        if (!_items.ContainsKey(id))
+        // Use TryGetValue to atomically check existence and get the old value
+        if (!_items.TryGetValue(id, out var oldItem))
             return null;
 
         item.Id = id;
-        _items[id] = item;
-        return item;
+        // Use TryUpdate to atomically update only if the key still exists
+        // This prevents resurrecting deleted entries
+        if (_items.TryUpdate(id, item, oldItem))
+            return item;
+
+        // If TryUpdate failed, the entry was deleted between TryGetValue and TryUpdate
+        return null;
     }
 
     public bool Delete(int id) => _items.TryRemove(id, out _);
