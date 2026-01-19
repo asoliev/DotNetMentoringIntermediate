@@ -21,7 +21,7 @@ public class ItemDataStore
 
     public IEnumerable<Item> GetByCategoryId(int categoryId)
     {
-        return _items.Values.Where(i => i.CategoryId == categoryId);
+        return [.. _items.Values.Where(i => i.CategoryId == categoryId)];
     }
 
     public Item Add(Item item)
