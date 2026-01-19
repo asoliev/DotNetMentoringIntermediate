@@ -15,8 +15,26 @@ public class ItemService(IItemRepository itemRepository, ICategoryRepository cat
             items = await itemRepository.GetAllAsync();
 
         var totalCount = items.Count();
+        
+        // Calculate skip value using long to prevent integer overflow
+        // If overflow occurs, skip will be negative or exceed int.MaxValue
+        long skip = (long)(pageNumber - 1) * pageSize;
+        
+        // If skip is negative (overflow) or exceeds int.MaxValue, return empty page
+        // Also optimize: if skip >= totalCount, no items to return
+        if (skip < 0 || skip > int.MaxValue || skip >= totalCount)
+        {
+            return new PagedResult<Item>
+            {
+                Items = [],
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+        
         var pagedItems = items
-            .Skip((pageNumber - 1) * pageSize)
+            .Skip((int)skip)
             .Take(pageSize)
             .ToList();
 
