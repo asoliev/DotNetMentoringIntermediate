@@ -12,10 +12,43 @@ public class CategoryService(ICategoryRepository categoryRepository, IItemReposi
 
     public async Task<bool> DeleteCategoryAsync(int id)
     {
-        // First delete all items in this category (cascade delete)
-        await itemRepository.DeleteByCategoryIdAsync(id);
+        // Get or create a lock for this specific category to prevent race conditions
+        // This ensures that item creation/update operations on this category wait
+        // until the deletion is complete, preventing orphaned items
+        var categoryLock = CategoryLockManager.GetLock(id);
+        
+        await categoryLock.WaitAsync();
+        try
+        {
+            // Verify category exists before proceeding with deletion
+            var category = await categoryRepository.GetByIdAsync(id);
+            if (category == null)
+                return false;
 
-        // Then delete the category itself
-        return await categoryRepository.DeleteAsync(id);
+            // Delete all items in this category (cascade delete)
+            await itemRepository.DeleteByCategoryIdAsync(id);
+
+            // Double-check: verify category still exists before deleting
+            // This prevents race conditions where category might have been deleted
+            // by another thread between the first check and item deletion
+            var categoryStillExists = await categoryRepository.GetByIdAsync(id);
+            if (categoryStillExists == null)
+                return false;
+
+            // Delete the category itself
+            var deleted = await categoryRepository.DeleteAsync(id);
+            
+            // Clean up the lock if category was successfully deleted
+            if (deleted)
+            {
+                CategoryLockManager.RemoveLock(id);
+            }
+            
+            return deleted;
+        }
+        finally
+        {
+            categoryLock.Release();
+        }
     }
 }

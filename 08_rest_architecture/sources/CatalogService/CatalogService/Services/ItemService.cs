@@ -69,27 +69,55 @@ public class ItemService(IItemRepository itemRepository, ICategoryRepository cat
 
     public async Task<Item> CreateItemAsync(Item item)
     {
-        // Validate category exists
-        var category = await categoryRepository.GetByIdAsync(item.CategoryId);
-        if (category == null)
-            throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
+        // Get or create a lock for this specific category to prevent race conditions
+        // This ensures that if a category is being deleted, we wait for that operation
+        // to complete before creating an item, preventing orphaned items
+        var categoryLock = CategoryLockManager.GetLock(item.CategoryId);
+        
+        await categoryLock.WaitAsync();
+        try
+        {
+            // Validate category exists (double-check after acquiring lock)
+            // This prevents creating items for categories that are being deleted
+            var category = await categoryRepository.GetByIdAsync(item.CategoryId);
+            if (category == null)
+                throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
 
-        var created = await itemRepository.AddAsync(item);
-        created.Category = category;
-        return created;
+            var created = await itemRepository.AddAsync(item);
+            created.Category = category;
+            return created;
+        }
+        finally
+        {
+            categoryLock.Release();
+        }
     }
 
     public async Task<Item?> UpdateItemAsync(int id, Item item)
     {
-        // Validate category exists
-        var category = await categoryRepository.GetByIdAsync(item.CategoryId);
-        if (category == null)
-            throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
-
-        var updated = await itemRepository.UpdateAsync(id, item);
-        updated?.Category = category;
+        // Get or create a lock for this specific category to prevent race conditions
+        // This ensures that if a category is being deleted, we wait for that operation
+        // to complete before updating an item, preventing orphaned items
+        var categoryLock = CategoryLockManager.GetLock(item.CategoryId);
         
-        return updated;
+        await categoryLock.WaitAsync();
+        try
+        {
+            // Validate category exists (double-check after acquiring lock)
+            // This prevents updating items to reference categories that are being deleted
+            var category = await categoryRepository.GetByIdAsync(item.CategoryId);
+            if (category == null)
+                throw new InvalidOperationException($"Category with id {item.CategoryId} does not exist.");
+
+            var updated = await itemRepository.UpdateAsync(id, item);
+            updated?.Category = category;
+            
+            return updated;
+        }
+        finally
+        {
+            categoryLock.Release();
+        }
     }
 
     public Task<bool> DeleteItemAsync(int id) => itemRepository.DeleteAsync(id);
