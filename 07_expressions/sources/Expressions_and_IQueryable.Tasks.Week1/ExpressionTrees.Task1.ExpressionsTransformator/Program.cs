@@ -8,8 +8,8 @@
  */
 using System;
 
-namespace ExpressionTrees.Task1.ExpressionsTransformer
-{
+namespace ExpressionTrees.Task1.ExpressionsTransformer;
+
     class Program
     {
         static void Main(string[] args)
@@ -22,4 +22,3 @@ namespace ExpressionTrees.Task1.ExpressionsTransformer
             Console.ReadLine();
         }
     }
-}

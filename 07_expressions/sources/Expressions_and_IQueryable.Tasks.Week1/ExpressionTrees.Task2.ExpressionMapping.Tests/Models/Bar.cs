@@ -1,7 +1,6 @@
-﻿namespace ExpressionTrees.Task2.ExpressionMapping.Tests.Models
+﻿namespace ExpressionTrees.Task2.ExpressionMapping.Tests.Models;
+
+internal class Bar
 {
-    internal class Bar
-    {
-        // add here some other properties
-    }
+    // add here some other properties
 }
