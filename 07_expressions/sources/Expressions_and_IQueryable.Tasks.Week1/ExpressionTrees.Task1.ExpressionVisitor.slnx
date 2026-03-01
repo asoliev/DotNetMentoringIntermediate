@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ExpressionTrees.Task1.ExpressionsTransformator/ExpressionTrees.Task1.ExpressionsTransformer.csproj" />
+  <Project Path="ExpressionTrees.Task2.ExpressionMapping.Tests/ExpressionTrees.Task2.ExpressionMapping.Tests.csproj" />
+  <Project Path="ExpressionTrees.Task2.ExpressionMapping/ExpressionTrees.Task2.ExpressionMapping.csproj" />
+</Solution>
